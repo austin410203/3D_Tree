@@ -61,6 +61,20 @@ def save(img, path, size):
     img.resize((size, size), Image.LANCZOS).save(path, optimize=True)
 
 
+def minimal_splash(w, h):
+    """washi white with one thin ink circle and a sakura dot, drawn 4x and scaled down for clean edges"""
+    k = 4
+    img = Image.new('RGB', (w * k, h * k), (246, 244, 240))
+    d = ImageDraw.Draw(img)
+    r = int(min(w, h) * 0.2) * k
+    cx, cy = w * k // 2, int(h * k * 0.44)
+    d.ellipse([cx - r, cy - r, cx + r, cy + r], outline=(47, 44, 43), width=max(2, int(min(w, h) * 0.0035 * k)))
+    dot = int(min(w, h) * 0.012 * k)
+    px, py = cx + int(r * 0.6), cy - int(r * 0.66)
+    d.ellipse([px - dot, py - dot, px + dot, py + dot], fill=(230, 163, 180))
+    return img.resize((w, h), Image.LANCZOS)
+
+
 def round_corners(img, r):
     m = Image.new('L', img.size, 0)
     ImageDraw.Draw(m).rounded_rectangle([0, 0, img.size[0] - 1, img.size[1] - 1], radius=int(img.size[0] * r), fill=255)
@@ -111,14 +125,18 @@ def main():
 
     # splash: the illustrated launch art cropped to fill each template size,
     # falling back to a plain field with the icon in the middle
-    splash_art = os.path.join(ROOT, 'art', 'splash_src.png')
+    splash_art = None  # art/splash_src.png (illustrated) is kept but the launch uses the minimal look
     small = round_corners(full, 0.22) if os.path.exists(art_path) else tree(1.0, background=False)
     for folder in os.listdir(res):
         p = os.path.join(res, folder, 'splash.png')
         if not os.path.exists(p):
             continue
         w, h = Image.open(p).size
-        if os.path.exists(splash_art):
+        if True:
+            img = minimal_splash(w, h)
+            img.save(p, optimize=True)
+            continue
+        if splash_art and os.path.exists(splash_art):
             from PIL import ImageOps
             ImageOps.fit(Image.open(splash_art).convert('RGB'), (w, h), Image.LANCZOS, centering=(0.5, 0.45)).save(p, optimize=True)
             continue

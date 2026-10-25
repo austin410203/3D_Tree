@@ -40,26 +40,38 @@ button { font: inherit; color: inherit; cursor: pointer; border: 0; background: 
 .title h1 { margin: 0; font-size: 22px; letter-spacing: .14em; font-weight: 600; }
 .title p { margin: 4px 0 0; font-size: 13px; letter-spacing: .2em; color: var(--ink-soft); }
 
-/* ---------- intro */
-.intro { position: fixed; inset: 0; z-index: 40; display: flex; flex-direction: column; align-items: center; padding: 24px;
-  padding-top: calc(var(--sat) + 13vh); color: #3b3346;
-  background: linear-gradient(to bottom, rgba(255, 246, 252, .55), rgba(255, 246, 252, 0) 38%),
-    url(icons/intro.jpg) center 45% / cover no-repeat, #e9d9ef;
-  transition: opacity .9s ease, visibility .9s; }
+/* ---------- intro: quiet Japanese layout - washi white, one ink circle that breathes,
+   the name set vertically in a Mincho face with a small vermilion seal */
+.intro {
+  --washi: #f6f4f0; --sumi: #2f2c2b; --sumi-soft: rgba(47, 44, 43, .55); --shu: #c4513b; --sakura: #e6a3b4;
+  --mincho: "Noto Serif TC", "Noto Serif CJK TC", "Noto Serif JP", "Hiragino Mincho ProN", "Yu Mincho", "PMingLiU", serif;
+  position: fixed; inset: 0; z-index: 40; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 18px; padding: 24px; color: var(--sumi); font-family: var(--mincho);
+  background: var(--washi) radial-gradient(circle at 50% 42%, #fbfaf8 0%, var(--washi) 60%);
+  transition: opacity 1s ease, visibility 1s; }
 .intro.out { opacity: 0; visibility: hidden; }
-.intro-box { text-align: center; animation: introIn 1.4s ease both; }
-.intro-icon { width: 76px; height: 76px; border-radius: 20px; box-shadow: 0 10px 30px rgba(120, 80, 140, .3); }
-.intro h1 { margin: 16px 0 8px; font-size: 32px; letter-spacing: .25em; text-indent: .25em; font-weight: 600;
-  text-shadow: 0 1px 18px rgba(255, 255, 255, .9); }
-:lang(en) .intro h1, :lang(ko) .intro h1 { letter-spacing: .06em; text-indent: .06em; }
-.intro-tag { margin: 0; font-size: 15px; letter-spacing: .2em; color: rgba(59, 51, 70, .8); text-shadow: 0 1px 12px rgba(255, 255, 255, .9); }
-.intro-feat { position: absolute; left: 50%; bottom: calc(var(--sab) + 92px); transform: translateX(-50%); margin: 0;
-  padding: 7px 16px; border-radius: 999px; white-space: nowrap; font-size: 12px; letter-spacing: .08em; color: #3b3346;
-  background: rgba(255, 255, 255, .6); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
-.intro-tap { position: absolute; left: 0; right: 0; bottom: calc(var(--sab) + 44px); margin: 0; text-align: center;
-  font-size: 14px; letter-spacing: .3em; color: #fff; text-shadow: 0 1px 10px rgba(40, 20, 60, .6); animation: pulse 2.4s ease-in-out infinite; }
-@keyframes introIn { from { opacity: 0; transform: translateY(14px) scale(.97); } }
+.intro-mark { display: flex; align-items: center; gap: 30px; margin-top: -6vh; animation: introIn 1.6s ease both; }
+.intro-ring { position: relative; width: 168px; height: 168px; border-radius: 50%;
+  border: 1.2px solid var(--sumi); opacity: .85; animation: breathe 8s ease-in-out infinite; }
+.intro-ring i { position: absolute; top: 18%; right: 16%; width: 9px; height: 9px; border-radius: 50%; background: var(--sakura); }
+.intro-title { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+.intro h1 { margin: 0; writing-mode: vertical-rl; font-size: 30px; font-weight: 500; letter-spacing: .45em; line-height: 1; }
+.intro-seal { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 3px; background: var(--shu);
+  color: var(--washi); font-size: 14px; line-height: 1; }
+.intro-en { margin: 26px 0 0; font-family: "Cormorant Garamond", Georgia, serif; font-size: 12px; letter-spacing: .5em; text-indent: .5em; color: var(--sumi-soft); }
+.intro-tag { margin: 0; font-size: 14px; letter-spacing: .3em; text-indent: .3em; color: var(--sumi-soft); animation: introIn 2.2s ease both; }
+.intro-tap { position: absolute; left: 0; right: 0; bottom: calc(var(--sab) + 52px); margin: 0; text-align: center;
+  font-size: 12px; letter-spacing: .4em; text-indent: .4em; color: var(--sumi-soft); animation: pulse 3s ease-in-out infinite; }
+.intro-tap::before { content: ""; display: block; width: 1px; height: 26px; margin: 0 auto 12px; background: var(--sumi-soft); opacity: .6; }
+/* Latin and Hangul names read better set horizontally */
+:lang(en) .intro-mark, :lang(ko) .intro-mark { flex-direction: column; gap: 26px; }
+:lang(en) .intro h1, :lang(ko) .intro h1 { writing-mode: horizontal-tb; font-size: 26px; letter-spacing: .12em; }
+:lang(en) .intro-title, :lang(ko) .intro-title { flex-direction: row; }
+:lang(en) .intro-en { display: none; }
+@keyframes introIn { from { opacity: 0; transform: translateY(10px); } }
+@keyframes breathe { 0%, 100% { transform: scale(.94); } 45% { transform: scale(1.04); } }
 @keyframes pulse { 50% { opacity: .35; } }
+@media (prefers-reduced-motion: reduce) { .intro-ring, .intro-tap { animation: none; } }
 
 /* ---------- home */
 .home { position: absolute; left: 50%; bottom: calc(var(--sab) + 22px); transform: translateX(-50%);
