@@ -199,10 +199,12 @@ function stepSession(dt) {
   updateTimer();
   if (sess.total && sess.t >= sess.total + PREP) return finishSession(true);
 
-  let b = 0;
+  let b = 0, prog = 0, left = 0, hold = false;
   const steps = sess.pattern.steps;
   if (sess.t < PREP) {
     $('breathText').textContent = '準備';
+    prog = sess.t / PREP;
+    left = PREP - sess.t;
   } else if (!steps) {
     $('breathText').textContent = '';
   } else {
@@ -214,9 +216,15 @@ function stepSession(dt) {
       if (ph.kind === 'out') world.dropLeaves(5 + Math.floor(Math.random() * 6), 0.3);
     }
     b = breathAt(sess.t);
+    prog = ph.u;
+    left = ph.len * (1 - ph.u);
+    hold = ph.kind === 'hold';
   }
   world.setBreath(b);
-  $('ring').firstElementChild.style.transform = `scale(${0.35 + 0.65 * b})`;
+  $('orb').style.transform = `scale(${0.3 + 0.7 * b})`;
+  $('arc').style.strokeDashoffset = 100 * (1 - prog);
+  $('count').textContent = steps || sess.t < PREP ? Math.max(1, Math.ceil(left - 1e-3)) : '';
+  $('ring').classList.toggle('hold', hold);
 }
 
 function updateTimer() {
