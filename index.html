@@ -26,6 +26,7 @@
 
 <div id="ui" class="ui">
   <header class="top">
+    <button id="langBtn" class="lang-btn" data-sheet="lang" aria-label="Language">🌐 <b id="langCode">中</b></button>
     <div class="title">
       <h1 id="sceneName">四季之樹</h1>
       <p id="sub">春・白天</p>
@@ -41,13 +42,13 @@
       <button data-min="20">20 分</button>
       <button data-min="0">不計時</button>
     </div>
-    <button id="start" class="start">開始靜心</button>
+    <button id="start" class="start" data-i18n="start">開始靜心</button>
     <nav class="tools">
-      <button data-sheet="sound"><span>🎧</span>聲音</button>
-      <button data-sheet="breath"><span>🍃</span>呼吸</button>
-      <button data-sheet="scene"><span>🌳</span>場景</button>
-      <button data-sheet="sleep"><span>🌙</span>入睡</button>
-      <button data-sheet="stats"><span>📖</span>紀錄</button>
+      <button data-sheet="sound"><span class="ico" data-ico="sound">🎧</span><em data-i18n="tool.sound">聲音</em></button>
+      <button data-sheet="breath"><span class="ico" data-ico="breath">🍃</span><em data-i18n="tool.breath">呼吸</em></button>
+      <button data-sheet="scene"><span class="ico" data-ico="scene">🌳</span><em data-i18n="tool.scene">場景</em></button>
+      <button data-sheet="sleep"><span class="ico" data-ico="sleep">🌙</span><em data-i18n="tool.sleep">入睡</em></button>
+      <button data-sheet="stats"><span class="ico" data-ico="stats">📖</span><em data-i18n="tool.stats">紀錄</em></button>
     </nav>
   </section>
 
@@ -66,7 +67,7 @@
       <p id="breathText">準備</p>
       <p id="breathHint" class="hint2">放鬆肩膀，跟著樹一起呼吸</p>
     </div>
-    <button id="stop" class="ghost">結束</button>
+    <button id="stop" class="ghost" data-i18n="stop">結束</button>
   </section>
 
   <!-- done -->
@@ -75,7 +76,7 @@
       <p class="big" id="doneTitle">完成 5 分鐘靜心</p>
       <p id="doneStats">連續 1 天・累計 5 分鐘</p>
       <div class="week" id="doneWeek"></div>
-      <button id="doneOk" class="start small">好</button>
+      <button id="doneOk" class="start small" data-i18n="ok">好</button>
     </div>
   </section>
 </div>
@@ -84,60 +85,65 @@
 <div id="scrim" class="scrim"></div>
 
 <section class="sheet" id="sheet-sound">
-  <header><h2>聲音</h2><button class="close" aria-label="關閉">✕</button></header>
+  <header><h2 data-i18n="sheet.sound">聲音</h2><button class="close" data-i18n-aria="close">✕</button></header>
   <div class="chips" id="presets"></div>
   <div class="mixer" id="mixer"></div>
-  <label class="row">總音量<input id="master" type="range" min="0" max="1" step="0.01" value="0.8"></label>
-  <p class="note">所有聲音都是即時合成，不需網路。</p>
+  <label class="row"><span data-i18n="master">總音量</span><input id="master" type="range" min="0" max="1" step="0.01" value="0.8"></label>
+  <p class="note" data-i18n="soundNote">所有聲音都是即時合成，不需網路。</p>
 </section>
 
 <section class="sheet" id="sheet-breath">
-  <header><h2>呼吸</h2><button class="close" aria-label="關閉">✕</button></header>
+  <header><h2 data-i18n="sheet.breath">呼吸</h2><button class="close" data-i18n-aria="close">✕</button></header>
   <div class="list" id="patterns"></div>
-  <label class="row switch">階段提示音<input id="cue" type="checkbox" checked></label>
-  <label class="row switch">頌缽開場與結束<input id="bowl" type="checkbox" checked></label>
-  <label class="row switch">震動提示<input id="haptic" type="checkbox"></label>
+  <label class="row switch"><span data-i18n="cue">階段提示音</span><input id="cue" type="checkbox" checked></label>
+  <label class="row switch"><span data-i18n="bowl">頌缽開場與結束</span><input id="bowl" type="checkbox" checked></label>
+  <label class="row switch"><span data-i18n="haptic">震動提示</span><input id="haptic" type="checkbox"></label>
 </section>
 
 <section class="sheet" id="sheet-scene">
-  <header><h2>場景</h2><button class="close" aria-label="關閉">✕</button></header>
+  <header><h2 data-i18n="sheet.scene">場景</h2><button class="close" data-i18n-aria="close">✕</button></header>
   <div class="list scenes" id="sceneList"></div>
-  <div id="seasonBox"><h3>季節</h3>
+  <div id="seasonBox"><h3 data-i18n="season">季節</h3>
   <div class="chips" id="seasonChips"></div></div>
-  <div id="timeBox"><h3>時間</h3>
+  <div id="timeBox"><h3 data-i18n="time">時間</h3>
   <div class="chips" id="timeChips"></div></div>
-  <label class="row">風<input id="wind" type="range" min="0" max="1" step="0.01" value="0.4"></label>
+  <label class="row"><span data-i18n="wind">風</span><input id="wind" type="range" min="0" max="1" step="0.01" value="0.4"></label>
   <label class="row"><span id="fallLabel">落葉</span><input id="fall" type="range" min="0" max="2" step="0.01" value="1"></label>
   <button id="regrow" class="wide">重新長一棵樹</button>
 </section>
 
 <section class="sheet" id="sheet-sleep">
-  <header><h2>入睡</h2><button class="close" aria-label="關閉">✕</button></header>
-  <p class="note big">邊聽邊睡：開始後可以直接關掉螢幕，聲音會繼續播放；時間到前一分鐘會慢慢轉小聲，然後停止。</p>
-  <h3>多久後停止</h3>
+  <header><h2 data-i18n="sheet.sleep">入睡</h2><button class="close" data-i18n-aria="close">✕</button></header>
+  <p class="note big" data-i18n="sleepIntro">邊聽邊睡：開始後可以直接關掉螢幕，聲音會繼續播放；時間到前一分鐘會慢慢轉小聲，然後停止。</p>
+  <h3 data-i18n="sleepAfter">多久後停止</h3>
   <div class="chips" id="sleepTimes"></div>
-  <h3>聲音</h3>
+  <h3 data-i18n="sleepSound">聲音</h3>
   <div class="chips" id="sleepSounds"></div>
-  <button id="sleepStart" class="start small wide-start">開始入睡</button>
+  <button id="sleepStart" class="start small wide-start" data-i18n="sleepStart">開始入睡</button>
 </section>
 
 <section class="sheet" id="sheet-stats">
-  <header><h2>紀錄</h2><button class="close" aria-label="關閉">✕</button></header>
+  <header><h2 data-i18n="sheet.stats">紀錄</h2><button class="close" data-i18n-aria="close">✕</button></header>
   <div class="stats" id="stats"></div>
   <div class="week" id="statsWeek"></div>
   <div id="remindBox" hidden>
-    <label class="row switch">每日提醒<input id="remind" type="checkbox"></label>
-    <label class="row">提醒時間<input id="remindTime" type="time" value="21:30"></label>
+    <label class="row switch"><span data-i18n="remind">每日提醒</span><input id="remind" type="checkbox"></label>
+    <label class="row"><span data-i18n="remindTime">提醒時間</span><input id="remindTime" type="time" value="21:30"></label>
   </div>
+</section>
+
+<section class="sheet" id="sheet-lang">
+  <header><h2 data-i18n="language">語言</h2><button class="close" data-i18n-aria="close">✕</button></header>
+  <div class="list" id="langList"></div>
 </section>
 
 <div id="sleep" class="sleep">
   <div class="sleep-box">
-    <p class="moon">🌙</p>
+    <p class="moon"><span class="ico big-ico" data-ico="sleep">🌙</span></p>
     <p class="big" id="sleepTitle">入睡中</p>
     <p id="sleepLeft">還有 30:00，之後慢慢停止</p>
     <p class="note" id="sleepNote">可以直接關掉螢幕，聲音會繼續播放</p>
-    <button id="sleepEnd" class="ghost-btn">結束入睡</button>
+    <button id="sleepEnd" class="ghost-btn" data-i18n="sleepEnd">結束入睡</button>
   </div>
 </div>
 

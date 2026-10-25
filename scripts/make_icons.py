@@ -1,5 +1,6 @@
-"""Draws the 四季之樹 icon (blossom tree on a pink field) and writes the PWA icons
-plus the Android launcher icons and splash images.
+"""Writes the PWA icons plus the Android launcher icons and splash images.
+Uses the Gemini artwork in art/app_icon_src.jpg when present, otherwise draws
+a fallback blossom tree.
 
     python scripts/make_icons.py            # from the repo root
 """
@@ -60,6 +61,14 @@ def save(img, path, size):
     img.resize((size, size), Image.LANCZOS).save(path, optimize=True)
 
 
+def round_corners(img, r):
+    m = Image.new('L', img.size, 0)
+    ImageDraw.Draw(m).rounded_rectangle([0, 0, img.size[0] - 1, img.size[1] - 1], radius=int(img.size[0] * r), fill=255)
+    out = Image.new('RGBA', img.size, (0, 0, 0, 0))
+    out.paste(img, (0, 0), m)
+    return out
+
+
 def round_mask(img):
     m = Image.new('L', img.size, 0)
     ImageDraw.Draw(m).ellipse([0, 0, img.size[0] - 1, img.size[1] - 1], fill=255)
@@ -68,8 +77,20 @@ def round_mask(img):
     return out
 
 
+def from_art(path):
+    """full-bleed art, plus a version shrunk onto its own blurred backdrop (maskable safe zone)"""
+    from PIL import ImageFilter
+    art = Image.open(path).convert('RGBA').resize((S, S), Image.LANCZOS)
+    back = art.resize((64, 64)).resize((S, S), Image.BICUBIC).filter(ImageFilter.GaussianBlur(40))
+    safe = back.copy()
+    k = int(S * 0.8)
+    safe.paste(art.resize((k, k), Image.LANCZOS), ((S - k) // 2, (S - k) // 2))
+    return art, safe
+
+
 def main():
-    full, safe = tree(1.0), tree(0.78)
+    art_path = os.path.join(ROOT, 'art', 'app_icon_src.jpg')
+    full, safe = from_art(art_path) if os.path.exists(art_path) else (tree(1.0), tree(0.78))
     icons = os.path.join(ROOT, 'icons')
     save(full.convert('RGB'), os.path.join(icons, 'icon-192.png'), 192)
     save(full.convert('RGB'), os.path.join(icons, 'icon-512.png'), 512)
@@ -79,8 +100,9 @@ def main():
     res = os.path.join(ROOT, 'android', 'app', 'src', 'main', 'res')
     if not os.path.isdir(res):
         return
-    legacy = tree(0.9)
-    fg = tree(0.6, background=False)  # adaptive foreground: art inside the 66/108 safe zone
+    legacy = full if os.path.exists(art_path) else tree(0.9)
+    # adaptive foreground: the launcher mask shows the middle 72/108, where the tree sits
+    fg = full if os.path.exists(art_path) else tree(0.6, background=False)
     for dpi, n in {'mdpi': 48, 'hdpi': 72, 'xhdpi': 96, 'xxhdpi': 144, 'xxxhdpi': 192}.items():
         d = os.path.join(res, f'mipmap-{dpi}')
         save(legacy, os.path.join(d, 'ic_launcher.png'), n)
@@ -88,7 +110,7 @@ def main():
         save(fg, os.path.join(d, 'ic_launcher_foreground.png'), n * 108 // 48)
 
     # splash: plain field with a small tree in the middle, same sizes as the template
-    small = tree(1.0, background=False)
+    small = round_corners(full, 0.22) if os.path.exists(art_path) else tree(1.0, background=False)
     for folder in os.listdir(res):
         p = os.path.join(res, folder, 'splash.png')
         if not os.path.exists(p):

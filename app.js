@@ -1,17 +1,16 @@
 import { world, SCENES } from './core.js';
 import { SoundEngine, TRACKS, PRESETS } from './audio.js';
 import { native } from './native.js';
+import { t, setLang, detectLang, LANGS, applyStatic, getLang } from './i18n.js';
 
 // ---------------------------------------------------------------- data
 const PATTERNS = [
-  { id: 'natural', name: '自然呼吸', desc: '吸 4 秒・吐 6 秒，最容易上手', steps: [['in', 4], ['out', 6]] },
-  { id: 'resonant', name: '共振呼吸', desc: '吸 5.5・吐 5.5，每分鐘約 5.5 次', steps: [['in', 5.5], ['out', 5.5]] },
-  { id: 'box', name: '方塊呼吸', desc: '吸 4・停 4・吐 4・停 4，幫助專注', steps: [['in', 4], ['hold', 4], ['out', 4], ['rest', 4]] },
-  { id: '478', name: '4-7-8 放鬆', desc: '吸 4・停 7・吐 8，適合睡前', steps: [['in', 4], ['hold', 7], ['out', 8]] },
-  { id: 'free', name: '不引導', desc: '只有計時與環境聲，自在呼吸', steps: null },
+  { id: 'natural', steps: [['in', 4], ['out', 6]] },
+  { id: 'resonant', steps: [['in', 5.5], ['out', 5.5]] },
+  { id: 'box', steps: [['in', 4], ['hold', 4], ['out', 4], ['rest', 4]] },
+  { id: '478', steps: [['in', 4], ['hold', 7], ['out', 8]] },
+  { id: 'free', steps: null },
 ];
-const PHASE_LABEL = { in: '吸氣', hold: '屏息', out: '吐氣', rest: '停' };
-const SEASON_NAMES = ['春', '夏', '秋', '冬'];
 const PREP = 5; // seconds of "準備" before the first breath
 
 const store = {
@@ -21,7 +20,7 @@ const store = {
 const settings = store.get('seasontree.settings', {
   minutes: 5, sleepMinutes: 30, pattern: 'natural', cue: true, bowl: true, haptic: false,
   scene: 'tree', season: 'auto', time: 'auto', wind: 0.4, fall: 1, preset: 'scene', mix: {}, master: 0.8,
-  remind: false, remindTime: '21:30',
+  remind: false, remindTime: '21:30', lang: detectLang(),
 });
 const stats = store.get('seasontree.stats', { days: {}, sessions: 0 });
 const save = () => store.set('seasontree.settings', settings);
@@ -61,12 +60,14 @@ function applyScene(instant = false) {
 }
 function updateSubtitle() {
   const info = world.info;
-  $('sceneName').textContent = info.name;
+  $('sceneName').textContent = sceneText(info.id)[0];
   const parts = [];
-  if (info.seasons) parts.push(SEASON_NAMES[world.season]);
-  if (info.dayNight) parts.push(nightNow >= 0.5 ? '夜晚' : '白天');
-  $('sub').textContent = parts.join('・') || '靜心場景';
+  if (info.seasons) parts.push(t('seasons')[world.season]);
+  if (info.dayNight) parts.push(nightNow >= 0.5 ? t('night') : t('day'));
+  $('sub').textContent = parts.join(getLang() === 'en' ? ' · ' : '・') || t('sceneOnly');
 }
+// [name, description, what you breathe with, slider label, regrow label]
+const sceneText = id => t(`scene.${id}`);
 // scene switch: sheet controls, subtitle and the "跟著場景" sound all follow it
 world.onScene = () => { applyScene(true); refreshChips(); };
 async function pickScene(id) {
@@ -90,8 +91,8 @@ function applySound() {
 }
 let bgAudioText = '';
 function syncBackgroundAudio() {
-  const names = TRACKS.filter(t => engine.levels[t.id] > 0).map(t => t.name);
-  const text = !engine.running || !names.length ? '' : (sess.on ? '靜心中・' : sleep.on ? '入睡中・' : '') + names.slice(0, 3).join('・');
+  const names = TRACKS.filter(tr => engine.levels[tr.id] > 0).map(tr => t(`track.${tr.id}`));
+  const text = !engine.running || !names.length ? '' : (sess.on ? t('bgSession') : sleep.on ? t('bgSleep') : '') + names.slice(0, 3).join('・');
   if (text === bgAudioText) return;
   bgAudioText = text;
   native.backgroundAudio(!!text, text);
@@ -119,8 +120,8 @@ function startSleep() {
   syncBackgroundAudio();
   native.keepAwake(false);          // let the screen turn off
   world.setPaused(true);
-  $('sleepTitle').textContent = '入睡中';
-  $('sleepNote').textContent = native.isNative ? '可以直接關掉螢幕，聲音會繼續播放' : '可以關掉螢幕；若瀏覽器停止聲音，請改用 App 版';
+  $('sleepTitle').textContent = t('sleeping');
+  $('sleepNote').textContent = native.isNative ? t('sleepNoteApp') : t('sleepNoteWeb');
   $('sleep').classList.add('on');
   updateSleep();
   clearInterval(sleep.timer);
@@ -129,7 +130,7 @@ function startSleep() {
 
 function updateSleep() {
   if (!sleep.on) return;
-  if (!sleep.end) { $('sleepLeft').textContent = '不會自動停止'; return; }
+  if (!sleep.end) { $('sleepLeft').textContent = t('sleepNoAuto'); return; }
   const left = sleep.end - engine.ctx.currentTime;
   if (left <= 0) {
     if (!sleep.silenced) {
@@ -139,14 +140,14 @@ function updateSleep() {
       engine.setMix({});
       engine.cancelFade();
       syncMixer(); syncBackgroundAudio(); refreshChips();
-      $('sleepTitle').textContent = '晚安';
+      $('sleepTitle').textContent = t('goodnight');
       $('sleepNote').textContent = '';
     }
-    $('sleepLeft').textContent = '聲音已經停止';
+    $('sleepLeft').textContent = t('sleepStopped');
     return;
   }
   const s = Math.ceil(left);
-  $('sleepLeft').textContent = `還有 ${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}，之後慢慢停止`;
+  $('sleepLeft').textContent = t('sleepLeft', s);
 }
 
 function endSleep() {
@@ -214,8 +215,8 @@ function startSession() {
   $('home').classList.add('hide');
   $('session').classList.add('on');
   $('session').classList.remove('quiet');
-  $('breathText').textContent = '準備';
-  $('breathHint').textContent = sess.pattern.steps ? `放鬆肩膀，跟著${world.info.follow}一起呼吸` : '放鬆肩膀，自在地呼吸';
+  $('breathText').textContent = t('prepare');
+  $('breathHint').textContent = sess.pattern.steps ? t('hintFollow', sceneText(world.scene)[2]) : t('hintFree');
   $('ring').style.opacity = sess.pattern.steps ? 1 : 0;
   world.setInteractive(false);
   world.setAutoRotate(0.12);
@@ -259,8 +260,8 @@ function finishSession(completed) {
   }
   if (secs >= 30) {
     const mins = Math.max(1, Math.round(secs / 60));
-    $('doneTitle').textContent = completed ? `完成 ${mins} 分鐘靜心` : `靜心了 ${mins} 分鐘`;
-    $('doneStats').textContent = `連續 ${streak()} 天・累計 ${totalMinutes()} 分鐘`;
+    $('doneTitle').textContent = completed ? t('doneFull', mins) : t('donePart', mins);
+    $('doneStats').textContent = t('doneStats', streak(), totalMinutes());
     renderWeek($('doneWeek'));
     setTimeout(() => $('done').classList.add('on'), completed ? 1600 : 300);
   } else {
@@ -281,7 +282,7 @@ function stepSession(dt) {
   let b = 0, prog = 0, left = 0, hold = false;
   const steps = sess.pattern.steps;
   if (sess.t < PREP) {
-    $('breathText').textContent = '準備';
+    $('breathText').textContent = t('prepare');
     prog = sess.t / PREP;
     left = PREP - sess.t;
   } else if (!steps) {
@@ -290,7 +291,7 @@ function stepSession(dt) {
     const ph = phaseAt(sess.t);
     if (ph.idx !== sess.idx) {
       sess.idx = ph.idx;
-      $('breathText').textContent = PHASE_LABEL[ph.kind];
+      $('breathText').textContent = t(`phase.${ph.kind}`);
       if (settings.haptic && ph.kind !== 'rest') native.haptic(ph.kind === 'out' ? 'double' : 'light');
       if (ph.kind === 'out') world.dropLeaves(5 + Math.floor(Math.random() * 6), 0.3);
     }
@@ -337,7 +338,7 @@ function longestStreak() {
 }
 const totalMinutes = () => Math.round(Object.values(stats.days).reduce((a, s) => a + s, 0) / 60);
 function renderWeek(el) {
-  const names = ['日', '一', '二', '三', '四', '五', '六'];
+  const names = t('days');
   const today = new Date();
   el.innerHTML = '';
   for (let i = 6; i >= 0; i--) {
@@ -348,8 +349,8 @@ function renderWeek(el) {
 }
 function renderStats() {
   $('stats').innerHTML = [
-    [streak(), '目前連續天數'], [longestStreak(), '最長連續天數'],
-    [totalMinutes(), '累計分鐘'], [stats.sessions, '靜心次數'],
+    [streak(), t('streak')], [longestStreak(), t('longest')],
+    [totalMinutes(), t('totalMin')], [stats.sessions, t('sessions')],
   ].map(([v, l]) => `<div><b>${v}</b><small>${l}</small></div>`).join('');
   renderWeek($('statsWeek'));
 }
@@ -380,12 +381,16 @@ function chips(el, items, isOn, onPick) {
   }
 }
 function refreshChips() {
-  document.querySelectorAll('#durations button').forEach(b => b.classList.toggle('on', +b.dataset.min === settings.minutes));
-  chips($('presets'), PRESETS, p => p.id === settings.preset, p => { settings.preset = p.id; save(); engine.start(); applySound(); });
+  document.querySelectorAll('#durations button').forEach(b => {
+    b.classList.toggle('on', +b.dataset.min === settings.minutes);
+    b.textContent = +b.dataset.min ? t('min', b.dataset.min) : t('untimed');
+  });
+  chips($('presets'), PRESETS.map(p => ({ ...p, name: t(`preset.${p.id}`) })), p => p.id === settings.preset, p => { settings.preset = p.id; save(); engine.start(); applySound(); });
   $('patterns').innerHTML = '';
   for (const p of PATTERNS) {
     const b = document.createElement('button');
-    b.innerHTML = `<b>${p.name}</b><small>${p.desc}</small>`;
+    const [pn, pd] = t(`pat.${p.id}`);
+    b.innerHTML = `<b>${pn}</b><small>${pd}</small>`;
     b.classList.toggle('on', p.id === settings.pattern);
     b.onclick = () => { settings.pattern = p.id; save(); refreshChips(); };
     $('patterns').appendChild(b);
@@ -393,7 +398,8 @@ function refreshChips() {
   $('sceneList').innerHTML = '';
   for (const sc of SCENES) {
     const b = document.createElement('button');
-    b.innerHTML = `<span>${sc.icon}</span><b>${sc.name}</b><small>${sc.desc}</small>`;
+    const [sn, sd] = sceneText(sc.id);
+    b.innerHTML = `<span class="ico" data-ico="scene-${sc.id}">${sc.icon}</span><b>${sn}</b><small>${sd}</small>`;
     b.classList.toggle('on', sc.id === world.scene);
     b.onclick = () => { pickScene(sc.id); closeSheets(); };
     $('sceneList').appendChild(b);
@@ -401,16 +407,25 @@ function refreshChips() {
   const info = world.info;
   $('seasonBox').hidden = !info.seasons;
   $('timeBox').hidden = !info.dayNight;
-  $('fallLabel').textContent = info.fall;
-  $('regrow').hidden = !info.regrow;
-  $('regrow').textContent = info.regrow || '';
-  const seasonItems = [{ id: 'auto', name: '跟著今天' }, ...SEASON_NAMES.map((n, i) => ({ id: i, name: n })), { id: 'cycle', name: '四季輪替' }];
+  const st = sceneText(info.id);
+  $('fallLabel').textContent = st[3];
+  $('regrow').hidden = !st[4];
+  $('regrow').textContent = st[4] || '';
+  const seasonItems = [{ id: 'auto', name: t('followToday') }, ...t('seasons').map((n, i) => ({ id: i, name: n })), { id: 'cycle', name: t('cycle') }];
   chips($('seasonChips'), seasonItems, it => it.id === settings.season, it => { settings.season = it.id; save(); applyScene(); });
-  chips($('sleepTimes'), SLEEP_TIMES.map(m => ({ id: m, name: m ? `${m} 分鐘` : '不停止' })),
+  chips($('sleepTimes'), SLEEP_TIMES.map(m => ({ id: m, name: m ? t('sleepMin', m) : t('noStop') })),
     it => it.id === settings.sleepMinutes, it => { settings.sleepMinutes = it.id; save(); });
-  chips($('sleepSounds'), PRESETS.filter(p => p.id !== 'off' && p.id !== 'custom'), p => p.id === settings.preset,
+  chips($('sleepSounds'), PRESETS.filter(p => p.id !== 'off' && p.id !== 'custom').map(p => ({ ...p, name: t(`preset.${p.id}`) })), p => p.id === settings.preset,
     p => { settings.preset = p.id; save(); engine.start(); applySound(); });
-  const timeItems = [{ id: 'auto', name: '跟著時間' }, { id: 'day', name: '白天' }, { id: 'night', name: '夜晚' }];
+  const timeItems = [{ id: 'auto', name: t('followClock') }, { id: 'day', name: t('day') }, { id: 'night', name: t('night') }];
+  $('langList').innerHTML = '';
+  for (const l of LANGS) {
+    const b = document.createElement('button');
+    b.innerHTML = `<b>${l.name}</b>`;
+    b.classList.toggle('on', l.id === getLang());
+    b.onclick = () => { settings.lang = l.id; save(); applyLang(); closeSheets(); };
+    $('langList').appendChild(b);
+  }
   chips($('timeChips'), timeItems, it => it.id === settings.time, it => { settings.time = it.id; save(); applyScene(); });
 }
 document.querySelectorAll('#durations button').forEach(b => b.onclick = () => { settings.minutes = +b.dataset.min; save(); refreshChips(); });
@@ -420,7 +435,7 @@ const sliders = {};
 for (const t of TRACKS) {
   const row = document.createElement('label');
   row.className = 'track';
-  row.innerHTML = `<span>${t.icon}</span><b>${t.name}</b><input type="range" min="0" max="1" step="0.01">`;
+  row.innerHTML = `<span>${t.icon}</span><b data-i18n="track.${t.id}"></b><input type="range" min="0" max="1" step="0.01">`;
   const input = row.querySelector('input');
   input.oninput = () => {
     engine.start();
@@ -491,20 +506,35 @@ let last = performance.now();
   requestAnimationFrame(raf);
 })(last);
 
+// ---------------------------------------------------------------- language
+let remindApply = null;
+const LANG_CODE = { zh: '中', en: 'EN', ja: '日', ko: '한' };
+function applyLang() {
+  setLang(settings.lang);
+  applyStatic();
+  $('langCode').textContent = LANG_CODE[getLang()];
+  document.title = t('appName');
+  refreshChips();
+  updateSubtitle();
+  syncBackgroundAudio();
+  if (settings.remind) remindApply?.();
+}
+
 // ---------------------------------------------------------------- daily reminder (app only)
-const REMIND_LINES = ['今天也跟著樹呼吸幾分鐘吧 🍃', '樹在等你，來坐一下 🌳', '給自己五分鐘，慢慢吸氣、慢慢吐氣', '葉子落下之前，先放下肩膀 🍂'];
 if (native.canRemind) {
   $('remindBox').hidden = false;
   $('remind').checked = settings.remind;
   $('remindTime').value = settings.remindTime;
   const apply = async () => {
     const [h, m] = settings.remindTime.split(':').map(Number);
-    const body = REMIND_LINES[Math.floor(Math.random() * REMIND_LINES.length)];
+    const lines = t('remindLines');
+    const body = lines[Math.floor(Math.random() * lines.length)];
     const ok = await native.setReminder(settings.remind, h, m, body);
     if (!ok && settings.remind) { settings.remind = false; $('remind').checked = false; }
     save();
   };
   $('remind').onchange = e => { settings.remind = e.target.checked; apply(); };
+  remindApply = apply;
   $('remindTime').onchange = e => { settings.remindTime = e.target.value || '21:30'; if (settings.remind) apply(); else save(); };
 }
 
@@ -517,8 +547,9 @@ native.onBack(() => {
 });
 
 // ---------------------------------------------------------------- boot
+setLang(settings.lang);
 await world.setScene(SCENES.some(s => s.id === settings.scene) ? settings.scene : 'tree', true);
-refreshChips();
+applyLang();
 applyScene(true);
 world.setAutoRotate(0.3);
 
