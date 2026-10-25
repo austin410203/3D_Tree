@@ -40,53 +40,52 @@ button { font: inherit; color: inherit; cursor: pointer; border: 0; background: 
 .title h1 { margin: 0; font-size: 22px; letter-spacing: .14em; font-weight: 600; }
 .title p { margin: 4px 0 0; font-size: 13px; letter-spacing: .2em; color: var(--ink-soft); }
 
-/* ---------- intro: quiet Japanese layout - washi white, one ink circle that breathes,
-   the name set vertically in a Mincho face with a small vermilion seal */
+/* ---------- intro: Japanese-app look - airy pastel gradient, soft bokeh, rounded type,
+   one white card with the icon and a row of scene stickers, a pill start button */
 .intro {
-  --washi: #f6f4f0; --sumi: #2f2c2b; --sumi-soft: rgba(47, 44, 43, .55); --shu: #c4513b; --sakura: #e6a3b4;
-  --mincho: "Noto Serif TC", "Noto Serif CJK TC", "Noto Serif JP", "Hiragino Mincho ProN", "Yu Mincho", "PMingLiU", serif;
-  position: fixed; inset: 0; z-index: 40; display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 18px; padding: 24px; color: var(--sumi); font-family: var(--mincho);
-  background: var(--washi) radial-gradient(circle at 50% 42%, #fbfaf8 0%, var(--washi) 60%);
-  transition: opacity 1s ease, visibility 1s; }
+  --pink: #f6b9cc; --peach: #ffd9c7; --lav: #d9d2f5; --sky: #cfe8f6; --ink: #4a4058; --ink-soft: #8a7f99;
+  --round: "Zen Maru Gothic", "M PLUS Rounded 1c", "Hiragino Maru Gothic ProN", "PingFang TC", "Noto Sans TC", system-ui, sans-serif;
+  position: fixed; inset: 0; z-index: 40; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 26px; padding: 24px; color: var(--ink); font-family: var(--round);
+  background: linear-gradient(160deg, #fff1f4 0%, #fde7ef 30%, #ece6fb 65%, #e3f1fb 100%);
+  transition: opacity .7s ease, visibility .7s; }
 .intro.out { opacity: 0; visibility: hidden; }
-.intro-mark { display: flex; align-items: center; gap: 30px; margin-top: -6vh; animation: introIn 1.6s ease both; }
-.intro-ring { position: relative; width: 168px; height: 168px; border-radius: 50%;
-  border: 1.2px solid var(--sumi); opacity: .85; animation: breathe 8s ease-in-out infinite; }
-.intro-ring i { position: absolute; top: 18%; right: 16%; width: 9px; height: 9px; border-radius: 50%; background: var(--sakura); }
-.intro-title { display: flex; flex-direction: column; align-items: center; gap: 14px; }
-.intro h1 { margin: 0; writing-mode: vertical-rl; font-size: 30px; font-weight: 500; letter-spacing: .45em; line-height: 1; }
-.intro-seal { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 3px; background: var(--shu);
-  color: var(--washi); font-size: 14px; line-height: 1; }
-.intro-en { margin: 26px 0 0; font-family: "Cormorant Garamond", Georgia, serif; font-size: 12px; letter-spacing: .5em; text-indent: .5em; color: var(--sumi-soft); }
-.intro-tag { margin: 0; font-size: 14px; letter-spacing: .3em; text-indent: .3em; color: var(--sumi-soft); animation: introIn 2.2s ease both; }
-.intro-tap { position: absolute; left: 0; right: 0; bottom: calc(var(--sab) + 52px); margin: 0; text-align: center;
-  font-size: 12px; letter-spacing: .4em; text-indent: .4em; color: var(--sumi-soft); animation: pulse 3s ease-in-out infinite; }
-.intro-tap::before { content: ""; display: block; width: 1px; height: 26px; margin: 0 auto 12px; background: var(--sumi-soft); opacity: .6; }
-/* Latin and Hangul names read better set horizontally */
-:lang(en) .intro-mark, :lang(ko) .intro-mark { flex-direction: column; gap: 26px; }
-:lang(en) .intro h1, :lang(ko) .intro h1 { writing-mode: horizontal-tb; font-size: 26px; letter-spacing: .12em; }
-:lang(en) .intro-title, :lang(ko) .intro-title { flex-direction: row; }
+.bokeh { position: absolute; border-radius: 50%; filter: blur(2px); opacity: .55; animation: drift 14s ease-in-out infinite alternate; }
+.b1 { width: 220px; height: 220px; left: -60px; top: 8%; background: radial-gradient(circle, var(--pink), transparent 70%); }
+.b2 { width: 260px; height: 260px; right: -90px; top: 40%; background: radial-gradient(circle, var(--sky), transparent 70%); animation-delay: -5s; }
+.b3 { width: 180px; height: 180px; left: 20%; bottom: -50px; background: radial-gradient(circle, var(--peach), transparent 70%); animation-delay: -9s; }
+.intro-card { position: relative; width: min(340px, 100%); padding: 30px 24px 22px; border-radius: 32px; text-align: center;
+  background: rgba(255, 255, 255, .78); box-shadow: 0 18px 50px rgba(150, 110, 170, .18); border: 2px solid #fff;
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); animation: popIn .9s cubic-bezier(.2, 1.3, .4, 1) both; }
+.intro-icon { width: 96px; height: 96px; border-radius: 28px; border: 4px solid #fff; box-shadow: 0 10px 24px rgba(200, 120, 160, .3);
+  margin-top: -78px; animation: float 4s ease-in-out infinite; }
+.intro h1 { margin: 14px 0 2px; font-size: 30px; font-weight: 700; letter-spacing: .14em; text-indent: .14em; }
+.intro-en { margin: 0 0 10px; font-size: 13px; font-weight: 500; letter-spacing: .18em; color: #e58aa8; }
 :lang(en) .intro-en { display: none; }
-@keyframes introIn { from { opacity: 0; transform: translateY(10px); } }
-@keyframes breathe { 0%, 100% { transform: scale(.94); } 45% { transform: scale(1.04); } }
+.intro-tag { margin: 0 0 16px; font-size: 14px; letter-spacing: .1em; color: var(--ink-soft); }
+.intro-scenes { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; padding: 10px; border-radius: 20px; background: #fff7fa; }
+.intro-scenes img { width: 100%; aspect-ratio: 1; object-fit: contain; animation: bob 3s ease-in-out infinite; }
+.intro-scenes img:nth-child(2n) { animation-delay: -1.5s; }
+.intro-feat { margin: 14px 0 0; font-size: 12px; color: var(--ink-soft); }
+.intro-start { position: relative; min-width: 220px; padding: 15px 40px; border-radius: 999px; font-family: var(--round);
+  font-size: 18px; font-weight: 700; letter-spacing: .3em; text-indent: .3em; color: #fff;
+  background: linear-gradient(135deg, #f59ab7, #c8a8f0); box-shadow: 0 10px 26px rgba(220, 120, 170, .4), inset 0 -3px 0 rgba(0, 0, 0, .08);
+  animation: popIn .9s .25s cubic-bezier(.2, 1.3, .4, 1) both; transition: transform .15s; }
+:lang(en) .intro-start, :lang(ko) .intro-start { letter-spacing: .08em; text-indent: .08em; }
+.intro-start:active { transform: scale(.95); }
+.intro-start:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+@keyframes popIn { from { opacity: 0; transform: translateY(16px) scale(.94); } }
+@keyframes float { 50% { transform: translateY(-6px); } }
+@keyframes bob { 50% { transform: translateY(-3px); } }
+@keyframes drift { to { transform: translate(30px, -24px) scale(1.1); } }
 @keyframes pulse { 50% { opacity: .35; } }
-@media (prefers-reduced-motion: reduce) { .intro-ring, .intro-tap { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .bokeh, .intro-icon, .intro-scenes img { animation: none; } }
 
 /* ---------- home */
 .home { position: absolute; left: 50%; bottom: calc(var(--sab) + 22px); transform: translateX(-50%);
   display: flex; flex-direction: column; align-items: center; gap: 14px; width: min(440px, calc(100% - 28px));
   transition: opacity .5s, transform .5s; }
 .home.hide { opacity: 0; transform: translate(-50%, 20px); pointer-events: none; }
-.scene-strip { display: flex; gap: 6px; width: 100%; overflow-x: auto; padding: 6px; border-radius: 18px;
-  background: var(--glass); border: 1px solid var(--line); box-shadow: var(--shadow);
-  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); scroll-snap-type: x proximity; scrollbar-width: none; }
-.scene-strip::-webkit-scrollbar { display: none; }
-.scene-strip button { flex: 0 0 auto; width: 64px; display: flex; flex-direction: column; align-items: center; gap: 4px;
-  padding: 6px 2px; border-radius: 12px; scroll-snap-align: start; font-size: 11px; line-height: 1.2; }
-.scene-strip button img { width: 34px; height: 34px; object-fit: contain; }
-.scene-strip button span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.scene-strip button.on { background: var(--chip-on); box-shadow: 0 2px 8px rgba(40, 30, 60, .12); }
 .durations { display: flex; gap: 4px; padding: 4px; border-radius: 999px; background: var(--glass);
   backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1px solid var(--line); box-shadow: var(--shadow); }
 .durations button { padding: 7px 12px; border-radius: 999px; font-size: 13px; white-space: nowrap; transition: background .25s; }

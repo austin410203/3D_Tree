@@ -194,7 +194,7 @@ export const flameMaterial = timeU => new THREE.ShaderMaterial({
       vec3 hot = vec3(1.0, 0.97, 0.85), mid = vec3(1.0, 0.72, 0.28), rim = vec3(0.95, 0.35, 0.12);
       vec3 c = mix(hot, mid, smoothstep(0.15, 0.6, d + y * 0.5));
       c = mix(c, rim, smoothstep(0.65, 1.0, d + y * 0.35));
-      c = mix(c, vec3(0.35, 0.5, 1.0), (1.0 - smoothstep(0.0, 0.16, y)) * 0.7); // blue base
+      c = mix(c, vec3(0.85, 0.3, 0.12), (1.0 - smoothstep(0.0, 0.16, y)) * 0.6); // deep orange root
       float a = edge * smoothstep(0.0, 0.05, y) * (1.0 - smoothstep(0.85, 1.0, y));
       gl_FragColor = vec4(c * a * uBright, 1.0);
     }`,
@@ -287,11 +287,11 @@ export function makeOcean({ size = 900, seg = 220, y = 0 } = {}) {
 export function makeGulls({ count = 7, center = [0, 6, -20], radius = [8, 22], height = [3, 9], seed = 5 } = {}) {
   const rnd = mulberry32(seed);
   const group = new THREE.Group();
-  const white = new THREE.MeshToonMaterial({ color: '#f7f7f4', gradientMap: toonRamp, side: THREE.DoubleSide });
-  const grey = new THREE.MeshToonMaterial({ color: '#9aa3ad', gradientMap: toonRamp, side: THREE.DoubleSide });
-  const body = new THREE.SphereGeometry(1, 12, 8).scale(0.32, 0.09, 0.09);
-  const wingShape = new THREE.Shape([new THREE.Vector2(0, 0), new THREE.Vector2(0.1, 0.55), new THREE.Vector2(-0.05, 0.75),
-    new THREE.Vector2(-0.16, 0.5), new THREE.Vector2(-0.14, 0)]);
+  const white = new THREE.MeshLambertMaterial({ color: '#f7f7f4', flatShading: true, side: THREE.DoubleSide });
+  const grey = new THREE.MeshLambertMaterial({ color: '#9aa3ad', flatShading: true, side: THREE.DoubleSide });
+  const body = new THREE.IcosahedronGeometry(1, 0).scale(0.32, 0.09, 0.1); // low poly
+  const wingShape = new THREE.Shape([new THREE.Vector2(0, 0), new THREE.Vector2(0.12, 0.5), new THREE.Vector2(-0.06, 0.78),
+    new THREE.Vector2(-0.15, 0)]);
   const wing = new THREE.ShapeGeometry(wingShape).rotateX(-Math.PI / 2);
   const birds = [];
   for (let i = 0; i < count; i++) {
@@ -300,7 +300,7 @@ export function makeGulls({ count = 7, center = [0, 6, -20], radius = [8, 22], h
     const wl = new THREE.Mesh(wing, white), wr = new THREE.Mesh(wing, grey);
     wl.scale.z = -1; // mirrored: one wing to each side
     g.add(wl, wr);
-    const beak = new THREE.Mesh(new THREE.ConeGeometry(0.04, 0.12, 5).rotateZ(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: '#f2b234' }));
+    const beak = new THREE.Mesh(new THREE.ConeGeometry(0.04, 0.12, 3).rotateZ(-Math.PI / 2), new THREE.MeshLambertMaterial({ color: '#f2b234', flatShading: true }));
     beak.position.x = 0.36;
     g.add(beak);
     g.scale.setScalar(1.6 + rnd() * 0.6);

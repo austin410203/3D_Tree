@@ -61,6 +61,21 @@ def save(img, path, size):
     img.resize((size, size), Image.LANCZOS).save(path, optimize=True)
 
 
+def pastel_splash(w, h, icon):
+    """soft pink-to-lavender gradient with the rounded app icon in the middle"""
+    top, mid, bot = (255, 241, 244), (236, 230, 251), (227, 241, 251)
+    img = Image.new('RGB', (w, h))
+    d = ImageDraw.Draw(img)
+    for y in range(h):
+        t = y / max(1, h - 1)
+        a, b, k = (top, mid, t / 0.65) if t < 0.65 else (mid, bot, (t - 0.65) / 0.35)
+        d.line([(0, y), (w, y)], fill=tuple(int(a[i] + (b[i] - a[i]) * k) for i in range(3)))
+    s = int(min(w, h) * 0.3)
+    ic = round_corners(icon.resize((s, s), Image.LANCZOS), 0.26)
+    img.paste(ic, ((w - s) // 2, int(h * 0.42 - s / 2)), ic)
+    return img
+
+
 def minimal_splash(w, h):
     """washi white with one thin ink circle and a sakura dot, drawn 4x and scaled down for clean edges"""
     k = 4
@@ -133,7 +148,7 @@ def main():
             continue
         w, h = Image.open(p).size
         if True:
-            img = minimal_splash(w, h)
+            img = pastel_splash(w, h, full)
             img.save(p, optimize=True)
             continue
         if splash_art and os.path.exists(splash_art):

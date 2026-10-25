@@ -183,11 +183,11 @@ scene.add(lotus);
 // ---------------------------------------------------------------- koi under the surface
 const koi = [];
 {
-  const body = new THREE.SphereGeometry(1, 16, 10).scale(0.42, 0.1, 0.15);
+  const body = new THREE.IcosahedronGeometry(1, 0).scale(0.42, 0.1, 0.16); // low poly koi
   const tail = new THREE.ShapeGeometry(new THREE.Shape([new THREE.Vector2(0, 0), new THREE.Vector2(-0.28, 0.16), new THREE.Vector2(-0.28, -0.16)]))
     .rotateX(-Math.PI / 2);
   for (const [col, r, sp, ph] of [[0xff7a3c, 4.2, 0.18, 0], [0xfff4ea, 5.5, -0.13, 2], [0xf2b134, 3.4, 0.22, 4]]) {
-    const mat = new THREE.MeshToonMaterial({ color: col, gradientMap: toonRamp });
+    const mat = new THREE.MeshLambertMaterial({ color: col, flatShading: true, side: THREE.DoubleSide });
     const g = new THREE.Group();
     const b = new THREE.Mesh(body, mat);
     const tl = new THREE.Mesh(tail, mat);

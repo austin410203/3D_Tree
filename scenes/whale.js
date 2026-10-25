@@ -83,7 +83,7 @@ scene.add(floor);
 
 // ---------------------------------------------------------------- whales
 function whaleGeometry() {
-  const g = new THREE.SphereGeometry(1, 48, 24);
+  const g = new THREE.SphereGeometry(1, 14, 8).toNonIndexed(); // low poly: few big facets
   const pa = g.attributes.position;
   const col = new Float32Array(pa.count * 3);
   const top = new THREE.Color('#2f4f6e'), belly = new THREE.Color('#c9d8e2'), c = new THREE.Color();
@@ -100,15 +100,15 @@ function whaleGeometry() {
   return g;
 }
 const whaleGeo = whaleGeometry();
-const whaleMat = new THREE.MeshToonMaterial({ vertexColors: true, gradientMap: toonRamp });
-const finMat = new THREE.MeshToonMaterial({ color: '#3d5f7e', gradientMap: toonRamp, side: THREE.DoubleSide });
+const whaleMat = new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true });
+const finMat = new THREE.MeshLambertMaterial({ color: '#3d5f7e', flatShading: true, side: THREE.DoubleSide });
 const flukeShape = new THREE.Shape();
 flukeShape.moveTo(0, 0);
 flukeShape.bezierCurveTo(-0.6, 0.6, -1.6, 1.9, -1.2, 2.3);
 flukeShape.bezierCurveTo(-0.6, 1.6, -0.2, 0.6, 0, 0.25);
 flukeShape.bezierCurveTo(-0.2, -0.6, -0.6, -1.6, -1.2, -2.3);
 flukeShape.bezierCurveTo(-1.6, -1.9, -0.6, -0.6, 0, 0);
-const flukeGeo = new THREE.ShapeGeometry(flukeShape, 16).rotateX(-Math.PI / 2);
+const flukeGeo = new THREE.ShapeGeometry(flukeShape, 3).rotateX(-Math.PI / 2);
 
 function makeWhale(scale) {
   const g = new THREE.Group();
@@ -121,7 +121,7 @@ function makeWhale(scale) {
   g.add(tail);
   const fins = [];
   for (const s of [-1, 1]) { // long humpback pectoral fins
-    const f = new THREE.Mesh(new THREE.SphereGeometry(1, 16, 8).scale(1.6, 0.08, 0.35), finMat);
+    const f = new THREE.Mesh(new THREE.OctahedronGeometry(1, 0).scale(1.6, 0.08, 0.35), finMat);
     f.position.set(1.6, -0.5, s * 1.2);
     f.rotation.set(s * 0.5, s * 0.6, -0.3);
     g.add(f);
@@ -137,8 +137,8 @@ const calf = makeWhale(0.45);
 
 // a small school of silver fish circling
 const FISH = 70;
-const fishMesh = new THREE.InstancedMesh(new THREE.ConeGeometry(0.08, 0.35, 5).rotateZ(-Math.PI / 2),
-  new THREE.MeshToonMaterial({ color: '#cfe6ef', gradientMap: toonRamp }), FISH);
+const fishMesh = new THREE.InstancedMesh(new THREE.ConeGeometry(0.08, 0.35, 4).rotateZ(-Math.PI / 2),
+  new THREE.MeshLambertMaterial({ color: '#cfe6ef', flatShading: true }), FISH);
 scene.add(fishMesh);
 const fishR = Array.from({ length: FISH }, (_, i) => [Math.random(), Math.random(), Math.random()]);
 

@@ -13,6 +13,8 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700&display=swap">
 <link rel="stylesheet" href="style.css">
 <script type="importmap">
 { "imports": {
@@ -24,18 +26,21 @@
 <body>
 <div id="app"></div>
 
-<!-- intro: shown on every launch, a tap also unlocks sound -->
+<!-- intro: shown on every launch; the start button enters the app and unlocks sound -->
 <div id="intro" class="intro">
-  <div class="intro-mark">
-    <div class="intro-ring" aria-hidden="true"><i></i></div>
-    <div class="intro-title">
-      <h1 data-i18n="appName">靜心時光</h1>
-      <span class="intro-seal" aria-hidden="true">靜</span>
+  <i class="bokeh b1"></i><i class="bokeh b2"></i><i class="bokeh b3"></i>
+  <div class="intro-card">
+    <img class="intro-icon" src="icons/icon-512.png" alt="">
+    <h1 data-i18n="appName">靜心時光</h1>
+    <p class="intro-en">Calm Moments</p>
+    <p class="intro-tag" data-i18n="tagline">跟著畫面，慢慢呼吸</p>
+    <div class="intro-scenes" aria-hidden="true">
+      <img src="icons/ui/scene-tree.png" alt=""><img src="icons/ui/scene-sea.png" alt=""><img src="icons/ui/scene-lotus.png" alt="">
+      <img src="icons/ui/scene-camp.png" alt=""><img src="icons/ui/scene-whale.png" alt=""><img src="icons/ui/scene-aurora.png" alt="">
     </div>
+    <p class="intro-feat" data-i18n="introFeatures">11 個冥想場景・呼吸引導・白噪音・入睡</p>
   </div>
-  <p class="intro-en">CALM MOMENTS</p>
-  <p class="intro-tag" data-i18n="tagline">跟著畫面，慢慢呼吸</p>
-  <p class="intro-tap" data-i18n="tapToStart">輕觸開始</p>
+  <button id="introStart" class="intro-start" data-i18n="tapToStart">開始</button>
 </div>
 
 <div id="ui" class="ui">
@@ -49,7 +54,6 @@
 
   <!-- home -->
   <section id="home" class="home">
-    <div class="scene-strip" id="sceneStrip"></div>
     <div class="durations" id="durations">
       <button data-min="3">3 分</button>
       <button data-min="5">5 分</button>

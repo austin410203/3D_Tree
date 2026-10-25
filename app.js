@@ -402,15 +402,6 @@ function refreshChips() {
     b.onclick = () => { settings.pattern = p.id; save(); refreshChips(); };
     $('patterns').appendChild(b);
   }
-  $('sceneStrip').innerHTML = '';
-  for (const sc of SCENES) {
-    const b = document.createElement('button');
-    b.innerHTML = `<img src="icons/ui/scene-${sc.id}.png" alt="" data-fallback="${sc.icon}"><span>${sceneText(sc.id)[0]}</span>`;
-    b.classList.toggle('on', sc.id === world.scene);
-    b.onclick = () => pickScene(sc.id);
-    $('sceneStrip').appendChild(b);
-  }
-  $('sceneStrip').querySelector('.on')?.scrollIntoView({ inline: 'center', block: 'nearest' });
   $('sceneList').innerHTML = '';
   for (const sc of SCENES) {
     const b = document.createElement('button');
@@ -575,8 +566,7 @@ function closeIntro() {
   el.classList.add('out');
   poke();
 }
-$('intro').addEventListener('pointerdown', () => { engine.start(); applySound(); closeIntro(); });
-setTimeout(closeIntro, 4200);
+$('introStart').addEventListener('click', () => { engine.start(); applySound(); closeIntro(); });
 
 // ---------------------------------------------------------------- boot
 setLang(settings.lang);
