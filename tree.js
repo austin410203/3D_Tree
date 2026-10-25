@@ -3,17 +3,17 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 // ---------------------------------------------------------------- seasons
 const SEASONS = [
-  { name: '春', bg: '#f7dce8', leaves: ['#c24f7c', '#ec8db0', '#ffd4e3'], shape: 1, trunk: '#8a9cc0',
+  { name: '春', bg: '#f7dce8', nightBg: '#2b2648', leaves: ['#c24f7c', '#ec8db0', '#ffd4e3'], shape: 1, trunk: '#8a9cc0',
     ground: '#7cc78f', grassBase: '#3f9a6a', grassTip: '#b4e58a', shadow: '#9a6f9a', rate: 18, size: 1.0 },
-  { name: '夏', bg: '#cde8f4', leaves: ['#1c6450', '#3a9a5c', '#a6d75c'], shape: 0, trunk: '#6b5040',
+  { name: '夏', bg: '#cde8f4', nightBg: '#142a44', leaves: ['#1c6450', '#3a9a5c', '#a6d75c'], shape: 0, trunk: '#6b5040',
     ground: '#58b173', grassBase: '#2f8257', grassTip: '#9fdc6a', shadow: '#3f6f80', rate: 3, size: 1.0 },
-  { name: '秋', bg: '#f6e4c8', leaves: ['#a3301d', '#e26f2a', '#f5c246'], shape: 0, trunk: '#5c4033',
+  { name: '秋', bg: '#f6e4c8', nightBg: '#2a2340', leaves: ['#a3301d', '#e26f2a', '#f5c246'], shape: 0, trunk: '#5c4033',
     ground: '#c7b25c', grassBase: '#8c7a32', grassTip: '#e8c96a', shadow: '#8a5a3a', rate: 30, size: 1.0 },
-  { name: '冬', bg: '#4d8ed8', leaves: ['#9ab2d8', '#e1ebf7', '#ffffff'], shape: 2, trunk: '#3d3946',
+  { name: '冬', bg: '#4d8ed8', nightBg: '#0f244c', leaves: ['#9ab2d8', '#e1ebf7', '#ffffff'], shape: 2, trunk: '#3d3946',
     ground: '#eef3fa', grassBase: '#bfcfe6', grassTip: '#ffffff', shadow: '#1f4c8c', rate: 7, size: 1.15 },
 ];
 for (const s of SEASONS) {
-  for (const k of ['bg', 'trunk', 'ground', 'grassBase', 'grassTip', 'shadow']) s[k] = new THREE.Color(s[k]);
+  for (const k of ['bg', 'nightBg', 'trunk', 'ground', 'grassBase', 'grassTip', 'shadow']) s[k] = new THREE.Color(s[k]);
   s.leaves = s.leaves.map(c => new THREE.Color(c));
 }
 
@@ -52,7 +52,8 @@ Object.assign(sun.shadow.camera, { left: -18, right: 18, top: 14, bottom: -14, n
 sun.shadow.bias = -0.0004;
 sun.shadow.normalBias = 0.03;
 scene.add(sun, sun.target);
-scene.add(new THREE.HemisphereLight(0xffffff, 0x9aa3b8, 1.2));
+const hemi = new THREE.HemisphereLight(0xffffff, 0x9aa3b8, 1.2);
+scene.add(hemi);
 
 const toonRamp = new THREE.DataTexture(new Uint8Array([110, 190, 255]), 3, 1, THREE.RedFormat);
 toonRamp.minFilter = toonRamp.magFilter = THREE.NearestFilter;
@@ -71,7 +72,11 @@ const U = {
   uFShape: { value: 0 }, uTShape: { value: 0 },
   uFSize: { value: 1 }, uTSize: { value: 1 },
   uGrassBase: { value: new THREE.Color() }, uGrassTip: { value: new THREE.Color() },
+  uNight: { value: 0 },
+  uBreath: { value: 0 },
+  uCanopyC: { value: new THREE.Vector3(0, 5, 0) },
 };
+const NIGHT_GLSL = 'vec3(0.30, 0.36, 0.62)';
 
 const SHAPE_GLSL = /* glsl */`
 float leafMask(vec2 p, float shape) {
@@ -103,7 +108,8 @@ vec3 windOffset(vec3 p, float r) {
 const LEAF_VERT = /* glsl */`
 ${WIND_GLSL}
 uniform float uProg, uGrow, uFShape, uTShape, uFSize, uTSize;
-uniform vec3 uLightDir, uFA, uFB, uFC, uTA, uTB, uTC;
+uniform vec3 uLightDir, uFA, uFB, uFC, uTA, uTB, uTC, uCanopyC;
+uniform float uNight, uBreath;
 attribute vec3 aOffset;
 attribute vec3 aNrm;
 attribute vec4 aRand;   // size, rotation, colour jitter, season threshold
@@ -120,6 +126,7 @@ void main() {
   float size = aRand.x * pop * grow * (isNew ? uTSize : uFSize);
 
   vec3 wp = (modelMatrix * vec4(aOffset, 1.0)).xyz;
+  wp = uCanopyC + (wp - uCanopyC) * (1.0 + 0.035 * uBreath); // the canopy breathes
   wp += windOffset(wp, aRand.z);
   vec4 mv = viewMatrix * vec4(wp, 1.0);
   float c = cos(aRand.y), s = sin(aRand.y);
@@ -133,7 +140,8 @@ void main() {
   shade = shade * 0.72 + aMeta.x * 0.42 - 0.16 + (aRand.z - 0.5) * 0.24;
   vec3 A = isNew ? uTA : uFA, B = isNew ? uTB : uFB, C = isNew ? uTC : uFC;
   vCol = shade < 0.42 ? A : (shade < 0.7 ? B : C);
-  vCol *= 0.9 + 0.2 * fract(aRand.z * 7.31);
+  vCol *= (0.9 + 0.2 * fract(aRand.z * 7.31)) * (1.0 + 0.12 * uBreath);
+  vCol = mix(vCol, vCol * ${NIGHT_GLSL}, uNight);
 }`;
 
 const LEAF_FRAG = /* glsl */`
@@ -332,6 +340,7 @@ scene.add(disc);
     vertexShader: /* glsl */`
       ${WIND_GLSL}
       uniform vec3 uGrassBase, uGrassTip;
+      uniform float uNight;
       attribute vec3 aPos;
       attribute vec2 aR;
       varying vec3 vCol;
@@ -342,6 +351,7 @@ scene.add(disc);
         vec3 wp = aPos + p;
         wp += uWindDir * h * h * (0.03 + 0.08 * uWind) * (sin(uTime * 2.2 + aPos.x * 1.7 + aPos.z) * 0.5 + 0.8);
         vCol = mix(uGrassBase, uGrassTip, h) * (0.92 + 0.16 * fract(aR.y * 13.7));
+        vCol = mix(vCol, vCol * ${NIGHT_GLSL}, uNight);
         gl_Position = projectionMatrix * viewMatrix * vec4(wp, 1.0);
       }`,
     fragmentShader: /* glsl */`
@@ -375,18 +385,20 @@ function plantTree() {
   leafMesh.castShadow = true;
   leafMesh.frustumCulled = false;
   scene.add(trunkMesh, leafMesh);
+  tree.box.getCenter(U.uCanopyC.value);
   growT = 0;
   fitCamera();
 }
 
 function fitCamera() {
   const b = tree.box, size = b.getSize(new THREE.Vector3()), c = b.getCenter(new THREE.Vector3());
-  const target = new THREE.Vector3(c.x * 0.6, c.y * 0.62, c.z * 0.6);
+  // aim low so the tree sits in the upper part of the screen, clear of the bottom controls
+  const target = new THREE.Vector3(c.x * 0.6, c.y * 0.42, c.z * 0.6);
   const span = Math.max(size.x, size.z, 7.5) * 1.15;
   const vfov = THREE.MathUtils.degToRad(camera.fov);
-  const distV = (b.max.y * 0.75) / Math.tan(vfov / 2);
+  const distV = (b.max.y - target.y) * 1.1 / Math.tan(vfov / 2);
   const distH = (span / 2) / (Math.tan(vfov / 2) * camera.aspect);
-  const dist = Math.max(distV, distH) * (camera.aspect < 1 ? 1.25 : 1.12);
+  const dist = Math.max(distV, distH) * (camera.aspect < 1 ? 1.3 : 1.25);
   const dir = camera.position.clone().sub(controls.target);
   if (dir.lengthSq() < 1e-4) dir.set(0.25, 0.22, 1);
   camera.position.copy(target).addScaledVector(dir.normalize(), dist);
@@ -399,6 +411,7 @@ const pMat = new THREE.ShaderMaterial({
   uniforms: U, side: THREE.DoubleSide,
   vertexShader: /* glsl */`
     uniform vec3 uLightDir;
+    uniform float uNight;
     attribute float aShape;
     varying vec2 vUv;
     varying vec3 vCol;
@@ -408,6 +421,7 @@ const pMat = new THREE.ShaderMaterial({
       vShape = aShape;
       vec3 n = normalize(mat3(modelMatrix * instanceMatrix) * vec3(0.0, 0.0, 1.0));
       vCol = instanceColor * (0.72 + 0.38 * abs(dot(n, uLightDir)));
+      vCol = mix(vCol, vCol * ${NIGHT_GLSL}, uNight);
       gl_Position = projectionMatrix * viewMatrix * modelMatrix * instanceMatrix * vec4(position, 1.0);
     }`,
   fragmentShader: LEAF_FRAG,
@@ -501,6 +515,7 @@ function updateParticles(dt, t, windNow) {
 let cur = 0, from = 0, to = 0, prog = 1, queued = -1;
 let growT = 0;
 const tmpC = new THREE.Color();
+const MOON = new THREE.Color(0x8fa6ff);
 
 function applyPalette(dstA, dstB, dstC, s) {
   dstA.copy(s.leaves[0]); dstB.copy(s.leaves[1]); dstC.copy(s.leaves[2]);
@@ -514,7 +529,7 @@ function setSeason(i) {
   applyPalette(U.uTA.value, U.uTB.value, U.uTC.value, T);
   U.uFShape.value = F.shape; U.uTShape.value = T.shape;
   U.uFSize.value = F.size; U.uTSize.value = T.size;
-  updateButtons();
+  world.onSeason?.(to);
 }
 function snapSeason(i) {
   from = to = cur = i; prog = 1;
@@ -524,7 +539,7 @@ function snapSeason(i) {
   U.uFShape.value = U.uTShape.value = S.shape;
   U.uFSize.value = U.uTSize.value = S.size;
   U.uProg.value = 0;
-  updateButtons();
+  world.onSeason?.(to);
 }
 
 function pickLeafColor(s) {
@@ -553,39 +568,98 @@ function updateSeason(dt) {
   }
   const e = prog >= 1 ? 1 : THREE.MathUtils.smootherstep(prog, 0, 1);
   const F = SEASONS[from], T = SEASONS[to];
+  const n = U.uNight.value;
   scene.background.copy(F.bg).lerp(T.bg, e);
+  scene.background.lerp(tmpC.copy(F.nightBg).lerp(T.nightBg, e), n);
   document.body.style.background = '#' + scene.background.getHexString();
   trunkMat.color.copy(F.trunk).lerp(T.trunk, e);
   groundMat.color.copy(F.ground).lerp(T.ground, e);
-  shadowMat.color.copy(F.shadow).lerp(T.shadow, e);
+  shadowMat.color.copy(F.shadow).lerp(T.shadow, e).lerp(tmpC.set(0x0b1530), n);
+  sun.intensity = 2.0 - 1.45 * n;
+  sun.color.setRGB(1, 1, 1).lerp(MOON, n);
+  hemi.intensity = 1.2 - 0.75 * n;
+  hemi.color.setRGB(1, 1, 1).lerp(MOON, n);
   U.uGrassBase.value.copy(F.grassBase).lerp(T.grassBase, e);
   U.uGrassTip.value.copy(F.grassTip).lerp(T.grassTip, e);
   return { F, T, e };
 }
 
-// ---------------------------------------------------------------- UI
-const ui = {
-  wind: document.getElementById('wind'),
-  fall: document.getElementById('fall'),
-  auto: document.getElementById('auto'),
-  seasonBtns: [...document.querySelectorAll('#seasons button[data-s]')],
-};
-let autoOn = false, autoT = 0, gustT = 0;
-
-function updateButtons() {
-  ui.seasonBtns.forEach(b => b.classList.toggle('on', +b.dataset.s === to));
-  ui.auto.classList.toggle('on', autoOn);
+// ---------------------------------------------------------------- fireflies (night)
+const FIRE = 90;
+const fireGeo = new THREE.BufferGeometry();
+{
+  const fp = new Float32Array(FIRE * 3), fr = new Float32Array(FIRE), rnd = mulberry32(11);
+  for (let i = 0; i < FIRE; i++) {
+    const a = rnd() * Math.PI * 2, r = 1 + rnd() * 6;
+    fp.set([Math.cos(a) * r, 0.3 + rnd() * 4.5, Math.sin(a) * r], i * 3);
+    fr[i] = rnd();
+  }
+  fireGeo.setAttribute('position', new THREE.BufferAttribute(fp, 3));
+  fireGeo.setAttribute('aR', new THREE.BufferAttribute(fr, 1));
 }
-ui.seasonBtns.forEach(b => b.addEventListener('click', () => { autoOn = false; setSeason(+b.dataset.s); updateButtons(); }));
-ui.auto.addEventListener('click', () => { autoOn = !autoOn; autoT = 0; if (autoOn) setSeason((to + 1) % 4); updateButtons(); });
-document.getElementById('gust').addEventListener('click', () => { gustT = 3.5; });
-document.getElementById('regrow').addEventListener('click', () => { seed = 1 + Math.floor(Math.random() * 1e6); plantTree(); });
-addEventListener('keydown', e => {
-  if (e.key >= '1' && e.key <= '4') { autoOn = false; setSeason(+e.key - 1); updateButtons(); }
-  else if (e.key === 'a' || e.key === 'A') ui.auto.click();
-  else if (e.key === 'g' || e.key === 'G') gustT = 3.5;
-  else if (e.key === 'r' || e.key === 'R') document.getElementById('regrow').click();
-});
+const fireU = { uTime: U.uTime, uAmt: { value: 0 }, uPx: { value: 1 } };
+const fireflies = new THREE.Points(fireGeo, new THREE.ShaderMaterial({
+  uniforms: fireU, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+  vertexShader: /* glsl */`
+    uniform float uTime, uAmt, uPx;
+    attribute float aR;
+    varying float vA;
+    void main() {
+      float ph = aR * 60.0;
+      vec3 p = position + vec3(sin(uTime * 0.31 + ph), sin(uTime * 0.47 + ph * 1.7) * 0.4, cos(uTime * 0.27 + ph * 1.3)) * 0.9;
+      vec4 mv = modelViewMatrix * vec4(p, 1.0);
+      vA = uAmt * pow(sin(uTime * (0.6 + aR) + ph) * 0.5 + 0.5, 3.0);
+      gl_PointSize = 90.0 * uPx / -mv.z;
+      gl_Position = projectionMatrix * mv;
+    }`,
+  fragmentShader: /* glsl */`
+    varying float vA;
+    void main() {
+      float d = length(gl_PointCoord - 0.5);
+      float g = smoothstep(0.5, 0.0, d);
+      gl_FragColor = vec4(vec3(1.0, 0.92, 0.55) * (g * g + 0.6 * smoothstep(0.12, 0.0, d)) * vA, 1.0);
+    }`,
+}));
+fireflies.frustumCulled = false;
+scene.add(fireflies);
+
+// ---------------------------------------------------------------- state driven by the app layer
+const S = {
+  wind: 0.45, fall: 1, auto: false, autoT: 0, gustT: 0,
+  night: 0, nightTarget: 0, breath: 0, breathShown: 0,
+};
+const BASE_FOV = 35;
+
+function dropLeaves(n, push = 0.6) {
+  if (!tree || growT < 1) return;
+  const T = SEASONS[to];
+  for (let k = 0; k < n; k++) {
+    const i = Math.floor(Math.random() * LEAF_COUNT), o = i * 3;
+    spawn(tree.offs[o], tree.offs[o + 1], tree.offs[o + 2], pickLeafColor(T), T.shape, tree.rand[i * 4] * T.size, push);
+  }
+}
+
+export const world = {
+  SEASONS,
+  onSeason: null,
+  get season() { return to; },
+  get busy() { return prog < 1; },
+  setSeason(i) { S.auto = false; setSeason(i); },
+  snapSeason(i) { S.auto = false; queued = -1; snapSeason(i); },
+  setAuto(on) { S.auto = on; S.autoT = 0; if (on) setSeason((to + 1) % 4); },
+  get auto() { return S.auto; },
+  setWind(v) { S.wind = v; },
+  get wind() { return S.wind; },
+  get windNow() { return U.uWind.value; },
+  setFall(v) { S.fall = v; },
+  setNight(v, instant = false) { S.nightTarget = v; if (instant) S.night = v; },
+  setBreath(v) { S.breath = v; },
+  setInteractive(on) { controls.enabled = on; },
+  setAutoRotate(speed) { controls.autoRotate = speed > 0; controls.autoRotateSpeed = speed; },
+  gust() { S.gustT = 3.5; },
+  dropLeaves,
+  regrow() { seed = 1 + Math.floor(Math.random() * 1e6); plantTree(); },
+};
 
 // ---------------------------------------------------------------- loop
 let simT = 0, spawnAcc = 0, snowAcc = 0;
@@ -596,9 +670,10 @@ function frame(dt) {
   U.uTime.value = simT;
 
   // wind with gusts
-  const base = +ui.wind.value;
-  gustT = Math.max(0, gustT - dt);
-  const gust = gustT > 0 ? Math.sin(Math.min(1, (3.5 - gustT) / 0.6) * Math.PI / 2) * Math.min(1, gustT / 1.2) : 0;
+  const base = S.wind;
+  S.gustT = Math.max(0, S.gustT - dt);
+  const gT = S.gustT;
+  const gust = gT > 0 ? Math.sin(Math.min(1, (3.5 - gT) / 0.6) * Math.PI / 2) * Math.min(1, gT / 1.2) : 0;
   const wobble = 0.8 + 0.25 * Math.sin(simT * 0.7) + 0.15 * Math.sin(simT * 1.9 + 1);
   const wind = Math.min(1.6, base * wobble + gust * 1.1);
   U.uWind.value = wind;
@@ -606,13 +681,23 @@ function frame(dt) {
 
   if (growT < 1) { growT = Math.min(1, growT + dt / 2.6); U.uGrow.value = growT; }
 
-  if (autoOn) { autoT += dt; if (autoT > 9 && prog >= 1) { autoT = 0; setSeason((to + 1) % 4); } }
+  if (S.auto) { S.autoT += dt; if (S.autoT > 12 && prog >= 1) { S.autoT = 0; setSeason((to + 1) % 4); } }
+
+  // day/night and breathing ease toward their targets
+  S.night += (S.nightTarget - S.night) * Math.min(1, dt * 0.8);
+  U.uNight.value = S.night;
+  S.breathShown += (S.breath - S.breathShown) * Math.min(1, dt * 6);
+  U.uBreath.value = S.breathShown;
+  const fov = BASE_FOV - 1.6 * S.breathShown;
+  if (Math.abs(camera.fov - fov) > 1e-3) { camera.fov = fov; camera.updateProjectionMatrix(); }
+  fireU.uAmt.value = S.night * (to === 3 ? 0.15 : 1);
+  fireU.uPx.value = renderer.getPixelRatio();
 
   const { T, e } = updateSeason(dt);
 
   // ambient falling from the canopy
   if (growT >= 1) {
-    const fall = +ui.fall.value;
+    const fall = S.fall;
     spawnAcc += dt * T.rate * fall * (0.3 + wind * 1.4) * (prog < 1 ? e : 1);
     while (spawnAcc >= 1) {
       spawnAcc -= 1;
@@ -622,7 +707,7 @@ function frame(dt) {
   }
   // snowfall from the sky in winter
   const winter = (to === 3 ? e : 0) + (from === 3 && prog < 1 ? 1 - e : 0);
-  snowAcc += dt * 90 * winter * (0.4 + +ui.fall.value * 0.6);
+  snowAcc += dt * 90 * winter * (0.4 + S.fall * 0.6);
   while (snowAcc >= 1) {
     snowAcc -= 1;
     spawn((Math.random() - 0.3) * 30, 10 + Math.random() * 4, (Math.random() - 0.5) * 22,
@@ -654,6 +739,6 @@ renderer.setAnimationLoop(() => frame(clock.getDelta()));
 // debug hook: the hidden preview pane throttles rAF, so tests pump frames by hand
 window.__tree = {
   frame(dt = 1 / 60, n = 1) { for (let i = 0; i < n; i++) frame(dt); },
-  setSeason, snapSeason, U, P,
+  setSeason, snapSeason, U, P, world, S,
   get state() { return { from, to, prog, growT, alive: P.state.reduce((a, s) => a + (s ? 1 : 0), 0) }; },
 };

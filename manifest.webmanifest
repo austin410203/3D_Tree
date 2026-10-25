@@ -1,0 +1,17 @@
+{
+  "name": "四季之樹・靜心",
+  "short_name": "四季之樹",
+  "description": "跟著一棵四季的樹呼吸：呼吸引導、靜心計時與白噪音。",
+  "lang": "zh-Hant",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f7dce8",
+  "theme_color": "#f7dce8",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
