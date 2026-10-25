@@ -184,5 +184,5 @@ export default {
   tap() {},
   drop() {},
   gust() {},
-  sound: night => (night ? { waves: 0.5, wind: 0.3, foghorn: 0.35 } : { waves: 0.5, gulls: 0.3, wind: 0.25 }),
+  sound: night => (night ? { waves: 0.5, wind: 0.4, foghorn: 0.45 } : { waves: 0.5, gulls: 0.35, wind: 0.4 }),
 };

@@ -263,5 +263,5 @@ export default {
   tap(ndc) { for (let i = 0; i < 10; i++) bubble(ndc.x * 6 + (Math.random() - 0.5), 3); },
   drop(n) { for (let i = 0; i < Math.min(20, n); i++) bubble(); },
   gust() { for (let i = 0; i < 20; i++) bubble(); },
-  sound: () => ({ whale: 0.6, drone: 0.25, brown: 0.12 }),
+  sound: () => ({ whale: 0.55, drone: 0.45, brown: 0.3 }),
 };

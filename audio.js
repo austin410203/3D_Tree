@@ -47,21 +47,21 @@ export const TRACKS = [
     const g = e.ctx.createGain(); g.gain.value = 0.2;
     src.connect(cut).connect(bp).connect(g).connect(out);
     const rs = e.loop('white');
-    const hp = e.ctx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 2600;
-    const rg = e.ctx.createGain(); rg.gain.value = 0.02;
+    const hp = e.ctx.createBiquadFilter(); hp.type = 'bandpass'; hp.frequency.value = 3000; hp.Q.value = 0.8;
+    const rg = e.ctx.createGain(); rg.gain.value = 0.01;
     rs.connect(hp).connect(rg).connect(out);
     return { update({ wind, t }) {
       const sway = 0.5 + 0.5 * Math.sin(t * 0.37) * Math.sin(t * 0.13 + 1);
       e.to(bp.frequency, 650 + 900 * Math.min(1, wind) * (0.5 + 0.5 * sway), 0.6);
-      e.to(g.gain, (0.14 + 0.6 * Math.min(1.2, wind)) * (0.4 + 0.6 * sway), 0.8);
-      e.to(rg.gain, 0.01 + 0.05 * Math.min(1.2, wind) * sway, 0.4);
+      e.to(g.gain, (0.07 + 0.28 * Math.min(1.2, wind)) * (0.3 + 0.7 * sway), 1.2);
+      e.to(rg.gain, 0.004 + 0.016 * Math.min(1.2, wind) * sway, 0.8);
     } };
   } },
   { id: 'rain', name: '雨聲', icon: '🌧️', build(e, out) {
     const hiss = e.loop('white');
-    const hp = e.ctx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 900;
-    const lp = e.ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 6500;
-    const hg = e.ctx.createGain(); hg.gain.value = 0.16;
+    const hp = e.ctx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 500;
+    const lp = e.ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 4200;
+    const hg = e.ctx.createGain(); hg.gain.value = 0.13;
     hiss.connect(hp).connect(lp).connect(hg).connect(out);
     const rumble = e.loop('brown');
     const rl = e.ctx.createBiquadFilter(); rl.type = 'lowpass'; rl.frequency.value = 380;
@@ -73,8 +73,8 @@ export const TRACKS = [
       while (next < now + e.lookahead) {
         next += rand(0.015, 0.07);
         const s = e.ctx.createBufferSource(); s.buffer = e.buf('white');
-        const f = e.ctx.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = rand(1800, 7000); f.Q.value = rand(2, 6);
-        const g = e.ctx.createGain(); const a = rand(0.05, 0.35);
+        const f = e.ctx.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = rand(900, 3800); f.Q.value = rand(1.5, 4);
+        const g = e.ctx.createGain(); const a = rand(0.015, 0.08);
         g.gain.setValueAtTime(0, next); g.gain.linearRampToValueAtTime(a, next + 0.002);
         g.gain.exponentialRampToValueAtTime(0.0001, next + rand(0.02, 0.06));
         const p = e.ctx.createStereoPanner(); p.pan.value = rand(-0.9, 0.9);
@@ -84,9 +84,9 @@ export const TRACKS = [
     } };
   } },
   { id: 'stream', name: '溪流', icon: '💧', build(e, out) {
-    const src = e.loop('white');
+    const src = e.loop('pink');
     const bands = [0, 1, 2, 3].map(() => {
-      const f = e.ctx.createBiquadFilter(); f.type = 'bandpass'; f.Q.value = rand(3, 7); f.frequency.value = rand(500, 2000);
+      const f = e.ctx.createBiquadFilter(); f.type = 'bandpass'; f.Q.value = rand(2, 4); f.frequency.value = rand(400, 1400);
       const g = e.ctx.createGain(); g.gain.value = 0.25;
       src.connect(f).connect(g).connect(out);
       return { f, g, next: 0 };
@@ -100,8 +100,8 @@ export const TRACKS = [
         if (b.next < now) b.next = now;
         while (b.next < now + e.lookahead) {
           b.next += rand(0.06, 0.22);
-          b.f.frequency.setTargetAtTime(rand(380, 2600), b.next, 0.05);
-          b.g.gain.setTargetAtTime(rand(0.08, 0.45), b.next, 0.05);
+          b.f.frequency.setTargetAtTime(rand(300, 1500), b.next, 0.06);
+          b.g.gain.setTargetAtTime(rand(0.06, 0.24), b.next, 0.06);
         }
       }
     } };
@@ -113,8 +113,8 @@ export const TRACKS = [
     src.connect(lp).connect(g).connect(out);
     return { update({ breath, breathing, t }) { // follows the breath in a session, else a slow swell
       const v = breathing ? breath : 0.5 - 0.5 * Math.cos(t * Math.PI * 2 / 9);
-      e.to(lp.frequency, 300 + 1300 * v, 0.15);
-      e.to(g.gain, 0.15 + 0.85 * v, 0.15);
+      e.to(lp.frequency, 260 + 950 * v, 0.2);
+      e.to(g.gain, 0.18 + 0.55 * v, 0.2);
     } };
   } },
   { id: 'birds', name: '鳥鳴', icon: '🐦', build(e, out) {
@@ -124,7 +124,7 @@ export const TRACKS = [
       while (next < now + e.lookahead) phrase();
     } };
     function phrase() {
-      const t0 = next, n = Math.floor(rand(2, 7)), f0 = rand(2400, 4600), pan = rand(-0.85, 0.85);
+      const t0 = next, n = Math.floor(rand(2, 7)), f0 = rand(1900, 3300), pan = rand(-0.85, 0.85);
       const p = e.ctx.createStereoPanner(); p.pan.value = pan; p.connect(out);
       let t = t0;
       for (let k = 0; k < n; k++) {
@@ -133,16 +133,16 @@ export const TRACKS = [
         o.frequency.setValueAtTime(f, t);
         o.frequency.exponentialRampToValueAtTime(f * rand(0.65, 1.45), t + d);
         const g = e.ctx.createGain();
-        g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(rand(0.05, 0.12), t + 0.008);
+        g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(rand(0.018, 0.045), t + 0.02);
         g.gain.exponentialRampToValueAtTime(0.0001, t + d);
         o.connect(g).connect(p); o.start(t); o.stop(t + d + 0.02);
         t += d + rand(0.03, 0.12);
       }
-      next = t + rand(2.5, 9);
+      next = t + rand(5, 14);
     }
   } },
   { id: 'crickets', name: '蟲鳴', icon: '🦗', build(e, out) {
-    const voices = [0, 1, 2].map(() => ({ f: rand(3900, 4800), pan: rand(-0.8, 0.8), next: 0, gap: rand(0.5, 0.9) }));
+    const voices = [0, 1].map(() => ({ f: rand(3000, 3800), pan: rand(-0.8, 0.8), next: 0, gap: rand(0.5, 0.9) }));
     return { tick(now) {
       for (const v of voices) {
         if (v.next < now) v.next = now + rand(0, 0.5);
@@ -153,7 +153,7 @@ export const TRACKS = [
           o.connect(g).connect(p).connect(out);
           let t = v.next;
           for (let k = 0; k < 3; k++) { // three pulses per chirp
-            g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.05, t + 0.004);
+            g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.018, t + 0.006);
             g.gain.linearRampToValueAtTime(0, t + 0.018); t += 0.03;
           }
           o.start(v.next); o.stop(t + 0.02);
@@ -173,8 +173,8 @@ export const TRACKS = [
       while (next < now + e.lookahead) {
         next += Math.random() < 0.25 ? rand(0.02, 0.08) : rand(0.15, 0.9);
         const s = e.ctx.createBufferSource(); s.buffer = e.buf('white');
-        const f = e.ctx.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = rand(1200, 3500);
-        const g = e.ctx.createGain(); const a = rand(0.05, 0.3), d = rand(0.003, 0.012);
+        const f = e.ctx.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = rand(1000, 3000); f.Q.value = 1.2;
+        const g = e.ctx.createGain(); const a = rand(0.02, 0.1), d = rand(0.003, 0.012);
         g.gain.setValueAtTime(a, next); g.gain.exponentialRampToValueAtTime(0.0001, next + d);
         s.connect(f).connect(g).connect(out);
         s.start(next, rand(0, NOISE_SECONDS - 0.1), d + 0.01);
@@ -192,7 +192,7 @@ export const TRACKS = [
         for (let k = 0; k < strikes; k++) {
           const f = NOTES[Math.floor(Math.random() * NOTES.length)];
           const p = e.ctx.createStereoPanner(); p.pan.value = rand(-0.7, 0.7); p.connect(out);
-          for (const [m, a, dur] of [[1, 0.09, 3.5], [2.76, 0.03, 1.6], [5.4, 0.012, 0.8]]) {
+          for (const [m, a, dur] of [[1, 0.05, 3.5], [2.76, 0.014, 1.6], [5.4, 0.004, 0.8]]) {
             const o = e.ctx.createOscillator(); o.frequency.value = f * m;
             const g = e.ctx.createGain();
             g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(a, t + 0.005);
@@ -201,7 +201,7 @@ export const TRACKS = [
           }
           t += rand(0.15, 0.6);
         }
-        next = t + rand(2.5, 9);
+        next = t + rand(6, 16);
       }
     } };
   } },
@@ -217,8 +217,8 @@ export const TRACKS = [
         while (next < now + e.lookahead) { // busy crackle of burning wood
           next += Math.random() < 0.35 ? rand(0.01, 0.05) : rand(0.06, 0.35);
           const s = e.ctx.createBufferSource(); s.buffer = e.buf('white');
-          const f = e.ctx.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = rand(1500, 5000); f.Q.value = rand(0.8, 3);
-          const g = e.ctx.createGain(); const a = rand(0.08, 0.5), d = rand(0.003, 0.02);
+          const f = e.ctx.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = rand(1100, 3400); f.Q.value = rand(0.8, 2);
+          const g = e.ctx.createGain(); const a = rand(0.03, 0.17), d = rand(0.003, 0.02);
           g.gain.setValueAtTime(a, next); g.gain.exponentialRampToValueAtTime(0.0001, next + d);
           s.connect(f).connect(g).connect(out);
           s.start(next, rand(0, NOISE_SECONDS - 0.1), d + 0.01);
@@ -227,7 +227,7 @@ export const TRACKS = [
         while (pop < now + e.lookahead) { // the odd deeper pop of a knot in the log
           const o = e.ctx.createOscillator(); o.frequency.setValueAtTime(rand(90, 160), pop);
           o.frequency.exponentialRampToValueAtTime(50, pop + 0.12);
-          const g = e.ctx.createGain(); g.gain.setValueAtTime(0.25, pop); g.gain.exponentialRampToValueAtTime(0.0001, pop + 0.15);
+          const g = e.ctx.createGain(); g.gain.setValueAtTime(0.14, pop); g.gain.exponentialRampToValueAtTime(0.0001, pop + 0.15);
           o.connect(g).connect(out); o.start(pop); o.stop(pop + 0.2);
           pop += rand(2, 7);
         }
@@ -241,7 +241,7 @@ export const TRACKS = [
         const s = e.ctx.createBufferSource(); s.buffer = e.buf('brown');
         const f = e.ctx.createBiquadFilter(); f.type = 'lowpass';
         f.frequency.setValueAtTime(rand(250, 500), next); f.frequency.exponentialRampToValueAtTime(90, next + 5);
-        const g = e.ctx.createGain(); const peak = rand(0.5, 1), rise = rand(0.3, 1.2), dur = rand(4, 7);
+        const g = e.ctx.createGain(); const peak = rand(0.3, 0.6), rise = rand(0.8, 1.8), dur = rand(5, 8);
         g.gain.setValueAtTime(0.0001, next); g.gain.exponentialRampToValueAtTime(peak, next + rise);
         g.gain.exponentialRampToValueAtTime(peak * 0.4, next + rise + 0.8);
         g.gain.exponentialRampToValueAtTime(0.0001, next + dur);
@@ -296,22 +296,22 @@ export const TRACKS = [
         let t = next;
         for (let k = 0; k < calls; k++) { // "kee-ow": a raspy rise then a long fall
           const d = rand(0.25, 0.5), f0 = rand(1300, 1800);
-          const o = e.ctx.createOscillator(); o.type = 'sawtooth';
+          const o = e.ctx.createOscillator(); o.type = 'triangle';
           o.frequency.setValueAtTime(f0, t);
           o.frequency.linearRampToValueAtTime(f0 * 1.35, t + d * 0.25);
           o.frequency.exponentialRampToValueAtTime(f0 * 0.55, t + d);
           const rasp = e.ctx.createOscillator(); rasp.frequency.value = rand(28, 45);
-          const rg = e.ctx.createGain(); rg.gain.value = 60;
+          const rg = e.ctx.createGain(); rg.gain.value = 25;
           rasp.connect(rg).connect(o.frequency);
-          const bp = e.ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 2200; bp.Q.value = 2.5;
+          const bp = e.ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 1600; bp.Q.value = 1.4;
           const g = e.ctx.createGain();
-          g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.16 * far, t + 0.03);
+          g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.07 * far, t + 0.05);
           g.gain.exponentialRampToValueAtTime(0.0001, t + d);
           o.connect(bp).connect(g).connect(p);
           o.start(t); o.stop(t + d + 0.05); rasp.start(t); rasp.stop(t + d + 0.05);
           t += d + rand(0.05, 0.25);
         }
-        next = t + rand(2.5, 9);
+        next = t + rand(5, 15);
       }
     } };
   } },
@@ -392,6 +392,18 @@ export const TRACKS = [
   } },
 ];
 
+// Per-track loudness calibration (dB), measured by rendering each track alone at
+// the same slider level: continuous beds are matched on average loudness,
+// occasional sounds (birds, bells, calls) on their short-term peaks. With these,
+// a slider value means about the same loudness for every sound.
+const dB = d => Math.pow(10, d / 20);
+const TRIM = {
+  wind: dB(8), rain: dB(-5), stream: dB(3), waves: dB(-6), fire: dB(8), campfire: dB(3),
+  drone: dB(-16), white: dB(-8), pink: dB(-6), brown: dB(-10),
+  birds: dB(9), crickets: dB(11), gulls: dB(9), windchime: dB(-4), thunder: dB(8),
+  whale: dB(-10), foghorn: dB(-18), templebell: dB(-13),
+};
+
 export const PRESETS = [
   { id: 'scene', name: '跟著場景' },
   { id: 'forest', name: '森林午後', mix: { wind: 0.5, birds: 0.6, stream: 0.35 } },
@@ -411,16 +423,16 @@ export const PRESETS = [
 // mix that matches what is on screen: season (0..3) and night flag
 export function sceneMix(season, night) {
   if (night) return [
-    { crickets: 0.4, windchime: 0.15, wind: 0.2 },
-    { crickets: 0.55, stream: 0.25 },
-    { crickets: 0.35, wind: 0.35 },
-    { wind: 0.4, drone: 0.3, windchime: 0.1 },
+    { crickets: 0.7, wind: 0.45, windchime: 0.25 },
+    { crickets: 0.65, stream: 0.4 },
+    { crickets: 0.55, wind: 0.5 },
+    { wind: 0.45, drone: 0.4, windchime: 0.25 },
   ][season];
   return [
-    { birds: 0.6, windchime: 0.18, wind: 0.25 },
-    { birds: 0.45, stream: 0.3, wind: 0.2 },
-    { wind: 0.45, birds: 0.3, windchime: 0.1 },
-    { wind: 0.45, windchime: 0.22, drone: 0.15 },
+    { birds: 0.7, wind: 0.5, windchime: 0.3 },
+    { birds: 0.5, stream: 0.45, wind: 0.35 },
+    { wind: 0.55, birds: 0.35, windchime: 0.3 },
+    { wind: 0.5, windchime: 0.35, drone: 0.3 },
   ][season];
 }
 
@@ -445,25 +457,31 @@ export class SoundEngine {
   }
 
   // must be called from a user gesture the first time (autoplay policy)
-  start() {
+  // `offlineCtx` (an OfflineAudioContext) renders the mix faster than real time,
+  // used to measure each scene's loudness when balancing the soundscapes
+  start(offlineCtx = null) {
     if (!this.ctx) {
       const AC = window.AudioContext || window.webkitAudioContext;
-      this.ctx = new AC();
+      this.offline = !!offlineCtx;
+      this.ctx = offlineCtx || new AC();
       this.buffers = {};
       const comp = this.ctx.createDynamicsCompressor();
       comp.threshold.value = -14; comp.ratio.value = 3;
       this.out = this.ctx.createGain();
       this.out.gain.value = this.master;
-      this.out.connect(comp).connect(this.ctx.destination);
+      const hp = this.ctx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 40;
+      const shelf = this.ctx.createBiquadFilter(); shelf.type = 'highshelf'; shelf.frequency.value = 5500; shelf.gain.value = -5;
+      const top = this.ctx.createBiquadFilter(); top.type = 'lowpass'; top.frequency.value = 11000;
+      this.out.connect(hp).connect(shelf).connect(top).connect(comp).connect(this.ctx.destination);
       this.fx = this.ctx.createGain(); // one-shot bells bypass the track mixer
       this.fx.connect(comp);
       for (const [id, v] of Object.entries(this.levels)) if (v > 0) this.ensure(id);
-      setInterval(() => this.tick(), 100);
+      if (!this.offline) setInterval(() => this.tick(), 100);
     }
-    if (this.ctx.state !== 'running') this.ctx.resume();
+    if (!this.offline && this.ctx.state !== 'running') this.ctx.resume();
     return this.ctx;
   }
-  get running() { return !!this.ctx && this.ctx.state === 'running'; }
+  get running() { return !!this.ctx && (this.offline || this.ctx.state === 'running'); }
 
   buf(kind) { return this.buffers[kind] ??= noiseBuffer(this.ctx, kind); }
   loop(kind) {
@@ -491,7 +509,7 @@ export class SoundEngine {
     this.levels[id] = v;
     if (!this.ctx) return;
     const tr = v > 0 ? this.ensure(id) : this.live[id];
-    if (tr) this.to(tr.gain.gain, v * v, 0.6);
+    if (tr) this.to(tr.gain.gain, v * v * (TRIM[id] ?? 1), 0.6);
   }
   setMix(mix) { for (const t of TRACKS) this.setLevel(t.id, mix[t.id] || 0); }
   setMaster(v) { this.master = v; if (this.ctx) this.to(this.out.gain, v, 0.2); }

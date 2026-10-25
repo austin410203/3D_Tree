@@ -254,5 +254,5 @@ export default {
   gust() { surge = 1; },
   tap() { surge = Math.min(1.2, surge + 0.6); },
   drop() { surge = Math.min(1.2, surge + 0.3); },
-  sound: night => (night ? { waves: 0.7, drone: 0.15 } : { waves: 0.75, wind: 0.15, birds: 0.12 }),
+  sound: night => (night ? { waves: 0.5, drone: 0.3 } : { waves: 0.5, gulls: 0.3, wind: 0.3 }),
 };

@@ -217,5 +217,5 @@ export default {
   tap(ndc) { meteor(ndc.x * 70, 35 + ndc.y * 30); },
   drop() { meteor(); },
   gust() { meteor(); meteor(); },
-  sound: () => ({ drone: 0.45, windchime: 0.25, wind: 0.15 }),
+  sound: () => ({ drone: 0.55, windchime: 0.4, wind: 0.3 }),
 };

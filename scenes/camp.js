@@ -176,5 +176,5 @@ export default {
   tap() { flare = 1; for (let i = 0; i < 14; i++) sparks.spawn(); },
   drop(n) { for (let i = 0; i < Math.min(20, n); i++) sparks.spawn(); },
   gust() { flare = 1; },
-  sound: () => ({ campfire: 0.7, crickets: 0.35, wind: 0.12 }),
+  sound: () => ({ campfire: 0.55, crickets: 0.45, wind: 0.3 }),
 };

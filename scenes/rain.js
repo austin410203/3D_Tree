@@ -207,5 +207,5 @@ export default {
   },
   drop() {},
   gust() { fog = Math.min(1, fog + 0.4); },
-  sound: night => (night ? { rain: 0.75, thunder: 0.35, drone: 0.12 } : { rain: 0.8, thunder: 0.2 }),
+  sound: night => (night ? { rain: 0.55, thunder: 0.5, drone: 0.25 } : { rain: 0.55, thunder: 0.4 }),
 };

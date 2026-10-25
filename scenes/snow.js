@@ -217,5 +217,5 @@ export default {
   tap() { gust = Math.min(2, gust + 1); },
   drop() { gust = Math.min(2, gust + 0.5); },
   gust() { gust = 2; },
-  sound: night => (night ? { wind: 0.3, fire: 0.15, drone: 0.25 } : { wind: 0.4, windchime: 0.15 }),
+  sound: night => (night ? { wind: 0.4, fire: 0.45, drone: 0.35 } : { wind: 0.55, windchime: 0.3, drone: 0.3 }),
 };

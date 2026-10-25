@@ -168,5 +168,5 @@ export default {
   tap() { if (passT < 0) passT = 0; },
   drop() {},
   gust() { if (passT < 0) passT = 0; },
-  sound: night => (night ? { waves: 0.4, wind: 0.35, drone: 0.12 } : { gulls: 0.55, waves: 0.35, wind: 0.3 }),
+  sound: night => (night ? { waves: 0.55, wind: 0.45, drone: 0.25 } : { gulls: 0.5, waves: 0.5, wind: 0.45 }),
 };

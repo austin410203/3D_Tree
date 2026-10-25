@@ -226,5 +226,5 @@ export default {
   tap() { flick = 1; for (let i = 0; i < 6; i++) spark(); },
   drop(n) { for (let i = 0; i < Math.min(10, n); i++) spark(); },
   gust() { flick = 1.2; },
-  sound: () => ({ fire: 0.6, drone: 0.3 }),
+  sound: () => ({ fire: 0.6, drone: 0.45 }),
 };

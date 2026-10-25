@@ -201,5 +201,5 @@ export default {
   tap() { leap = 1; for (let i = 0; i < 30; i++) sparks.spawn(); },
   drop(n) { for (let i = 0; i < Math.min(30, n); i++) sparks.spawn(); },
   gust() { leap = 1; },
-  sound: () => ({ windchime: 0.3, drone: 0.35, crickets: 0.25, wind: 0.12 }),
+  sound: () => ({ drone: 0.5, windchime: 0.45, crickets: 0.35, wind: 0.25 }),
 };
