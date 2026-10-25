@@ -19,7 +19,7 @@ const store = {
   set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* private mode */ } },
 };
 const settings = store.get('seasontree.settings', {
-  minutes: 5, pattern: 'natural', cue: true, bowl: true, haptic: false,
+  minutes: 5, sleepMinutes: 30, pattern: 'natural', cue: true, bowl: true, haptic: false,
   scene: 'tree', season: 'auto', time: 'auto', wind: 0.4, fall: 1, preset: 'scene', mix: {}, master: 0.8,
   remind: false, remindTime: '21:30',
 });
@@ -78,6 +78,7 @@ setInterval(() => { if (settings.time === 'auto' || settings.season === 'auto') 
 
 // ---------------------------------------------------------------- sound
 function currentMix() {
+  if (sleep.silenced) return {};
   if (settings.preset === 'scene') return world.sceneMix(nightNow >= 0.5);
   if (settings.preset === 'custom') return settings.mix;
   return PRESETS.find(p => p.id === settings.preset)?.mix || {};
@@ -90,15 +91,78 @@ function applySound() {
 let bgAudioText = '';
 function syncBackgroundAudio() {
   const names = TRACKS.filter(t => engine.levels[t.id] > 0).map(t => t.name);
-  const text = !engine.running || !names.length ? '' : (sess.on ? '靜心中・' : '') + names.slice(0, 3).join('・');
+  const text = !engine.running || !names.length ? '' : (sess.on ? '靜心中・' : sleep.on ? '入睡中・' : '') + names.slice(0, 3).join('・');
   if (text === bgAudioText) return;
   bgAudioText = text;
   native.backgroundAudio(!!text, text);
 }
-native.onBackgroundStop(() => { settings.preset = 'off'; save(); applySound(); refreshChips(); });
+native.onBackgroundStop(() => { settings.preset = 'off'; save(); applySound(); refreshChips(); if (sleep.on) endSleep(); });
 document.addEventListener('visibilitychange', () => engine.setBackground(document.hidden));
 // browsers only allow audio after a gesture: start on the first touch anywhere
 addEventListener('pointerdown', () => { if (!engine.running) { engine.start(); applySound(); } }, { capture: true });
+
+// ---------------------------------------------------------------- sleep: listen while falling asleep
+const sleep = { on: false, end: 0, silenced: false, timer: 0 };
+const SLEEP_TIMES = [15, 30, 45, 60, 90, 0];
+const SLEEP_FADE = 60;
+
+function startSleep() {
+  closeSheets();
+  if (sess.on) finishSession(false);
+  engine.start();
+  sleep.silenced = false;
+  if (settings.preset === 'off') settings.preset = 'sleep';
+  save();
+  applySound();
+  Object.assign(sleep, { on: true, end: settings.sleepMinutes ? engine.ctx.currentTime + settings.sleepMinutes * 60 : 0 });
+  if (sleep.end) engine.fadeOutAt(sleep.end, Math.min(SLEEP_FADE, settings.sleepMinutes * 30));
+  syncBackgroundAudio();
+  native.keepAwake(false);          // let the screen turn off
+  world.setPaused(true);
+  $('sleepTitle').textContent = '入睡中';
+  $('sleepNote').textContent = native.isNative ? '可以直接關掉螢幕，聲音會繼續播放' : '可以關掉螢幕；若瀏覽器停止聲音，請改用 App 版';
+  $('sleep').classList.add('on');
+  updateSleep();
+  clearInterval(sleep.timer);
+  sleep.timer = setInterval(updateSleep, 1000);
+}
+
+function updateSleep() {
+  if (!sleep.on) return;
+  if (!sleep.end) { $('sleepLeft').textContent = '不會自動停止'; return; }
+  const left = sleep.end - engine.ctx.currentTime;
+  if (left <= 0) {
+    if (!sleep.silenced) {
+      // the fade has already happened on the audio clock; now actually stop the tracks
+      sleep.silenced = true;
+      settings.preset = 'off'; save();
+      engine.setMix({});
+      engine.cancelFade();
+      syncMixer(); syncBackgroundAudio(); refreshChips();
+      $('sleepTitle').textContent = '晚安';
+      $('sleepNote').textContent = '';
+    }
+    $('sleepLeft').textContent = '聲音已經停止';
+    return;
+  }
+  const s = Math.ceil(left);
+  $('sleepLeft').textContent = `還有 ${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}，之後慢慢停止`;
+}
+
+function endSleep() {
+  if (!sleep.on) return;
+  sleep.on = false;
+  clearInterval(sleep.timer);
+  engine.cancelFade();
+  sleep.silenced = false;
+  $('sleep').classList.remove('on');
+  world.setPaused(false);
+  syncBackgroundAudio();
+  poke();
+}
+$('sleepEnd').onclick = endSleep;
+$('sleepStart').onclick = startSleep;
+document.addEventListener('visibilitychange', () => { if (!document.hidden) updateSleep(); });
 
 // ---------------------------------------------------------------- session
 const sess = { on: false, t: 0, total: 0, pattern: null, idx: -1, quietT: 0,
@@ -342,6 +406,10 @@ function refreshChips() {
   $('regrow').textContent = info.regrow || '';
   const seasonItems = [{ id: 'auto', name: '跟著今天' }, ...SEASON_NAMES.map((n, i) => ({ id: i, name: n })), { id: 'cycle', name: '四季輪替' }];
   chips($('seasonChips'), seasonItems, it => it.id === settings.season, it => { settings.season = it.id; save(); applyScene(); });
+  chips($('sleepTimes'), SLEEP_TIMES.map(m => ({ id: m, name: m ? `${m} 分鐘` : '不停止' })),
+    it => it.id === settings.sleepMinutes, it => { settings.sleepMinutes = it.id; save(); });
+  chips($('sleepSounds'), PRESETS.filter(p => p.id !== 'off' && p.id !== 'custom'), p => p.id === settings.preset,
+    p => { settings.preset = p.id; save(); engine.start(); applySound(); });
   const timeItems = [{ id: 'auto', name: '跟著時間' }, { id: 'day', name: '白天' }, { id: 'night', name: '夜晚' }];
   chips($('timeChips'), timeItems, it => it.id === settings.time, it => { settings.time = it.id; save(); applyScene(); });
 }
@@ -399,6 +467,7 @@ canvasHost.addEventListener('pointerup', e => {
 });
 addEventListener('pointermove', () => { if (!sess.on) idleT = 0; });
 addEventListener('keydown', e => {
+  if (sleep.on) { if (e.key === 'Escape') endSleep(); return; }
   poke();
   if (e.key === ' ') { e.preventDefault(); sess.on ? finishSession(false) : $('done').classList.contains('on') ? $('doneOk').click() : startSession(); }
   else if (e.key >= '1' && e.key <= '4') { settings.season = +e.key - 1; save(); applyScene(); }
@@ -440,6 +509,7 @@ if (native.canRemind) {
 }
 
 native.onBack(() => {
+  if (sleep.on) { endSleep(); return true; }
   if (document.querySelector('.sheet.on')) { closeSheets(); return true; }
   if (sess.on) { finishSession(false); return true; }
   if ($('done').classList.contains('on')) { $('doneOk').click(); return true; }
@@ -459,4 +529,4 @@ if ('serviceWorker' in navigator && location.protocol === 'https:' && !native.is
   navigator.serviceWorker.register('sw.js').catch(() => {});
 }
 
-window.__app = { step, settings, stats, engine, sess, startSession, finishSession, applyScene, openSheet, pickScene };
+window.__app = { step, settings, stats, engine, sess, sleep, startSleep, endSleep, startSession, finishSession, applyScene, openSheet, pickScene };

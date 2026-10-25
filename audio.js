@@ -330,6 +330,23 @@ export class SoundEngine {
   }
   setMix(mix) { for (const t of TRACKS) this.setLevel(t.id, mix[t.id] || 0); }
   setMaster(v) { this.master = v; if (this.ctx) this.to(this.out.gain, v, 0.2); }
+
+  // sleep timer: the master fades to silence over `dur` seconds ending at audio time `end`.
+  // Scheduled on the audio clock, so it happens on time even with the screen off.
+  fadeOutAt(end, dur = 60) {
+    if (!this.running) return;
+    const g = this.out.gain, now = this.ctx.currentTime;
+    g.cancelScheduledValues(now);
+    g.setValueAtTime(this.master, now);
+    g.setValueAtTime(this.master, Math.max(now, end - dur));
+    g.linearRampToValueAtTime(0.0001, Math.max(now + 0.1, end));
+  }
+  cancelFade() {
+    if (!this.running) return;
+    const g = this.out.gain, now = this.ctx.currentTime;
+    g.cancelScheduledValues(now);
+    g.setTargetAtTime(this.master, now, 0.3);
+  }
   set(p) { Object.assign(this.params, p); }
 
   tick() {

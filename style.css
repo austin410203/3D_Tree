@@ -52,7 +52,7 @@ button { font: inherit; color: inherit; cursor: pointer; border: 0; background: 
 .start.small { padding: 12px; font-size: 15px; letter-spacing: .2em; }
 .tools { display: flex; justify-content: space-between; width: 100%; padding: 6px; border-radius: 18px; background: var(--glass);
   backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1px solid var(--line); box-shadow: var(--shadow); }
-.tools button { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 8px 0; border-radius: 12px; font-size: 12px; }
+.tools button { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 8px 0; border-radius: 12px; font-size: 12px; }
 .tools button span { font-size: 19px; line-height: 1; }
 .tools button:active { background: var(--chip-on); }
 
@@ -62,7 +62,7 @@ button { font: inherit; color: inherit; cursor: pointer; border: 0; background: 
 .session > * { pointer-events: auto; }
 .timer { position: absolute; left: 50%; top: calc(var(--sat) + 22px); transform: translateX(-50%);
   font-size: 15px; letter-spacing: .25em; font-variant-numeric: tabular-nums; color: var(--ink-soft); transition: opacity .8s; }
-.breath { position: absolute; left: 50%; bottom: calc(var(--sab) + 13vh); transform: translateX(-50%); text-align: center; pointer-events: none; }
+.breath { position: absolute; left: 0; right: 0; padding: 0 16px; bottom: calc(var(--sab) + max(84px, 11vh)); text-align: center; pointer-events: none; }
 /* breath guide: the orb fills the ring on the inhale, the arc shows how far into the phase you are */
 .ring { position: relative; width: 168px; height: 168px; margin: 0 auto 14px; display: grid; place-items: center; transition: opacity .8s; }
 .ring svg { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); overflow: visible; }
@@ -79,7 +79,7 @@ body:not(.night) .ring .arc { stroke: var(--accent); filter: none; }
 #breathText { margin: 0; font-size: 26px; letter-spacing: .5em; text-indent: .5em; font-weight: 600; transition: opacity .4s;
   text-shadow: 0 1px 12px rgba(255, 255, 255, .6); }
 body.night #breathText { text-shadow: 0 1px 12px rgba(0, 0, 0, .5); }
-.hint2 { margin: 8px 0 0; font-size: 13px; letter-spacing: .15em; color: var(--ink-soft); transition: opacity 1.5s; }
+.hint2 { margin: 8px 0 0; font-size: 13px; letter-spacing: .12em; line-height: 1.5; color: var(--ink-soft); transition: opacity 1.5s; }
 .ghost { position: absolute; left: 50%; bottom: calc(var(--sab) + 26px); transform: translateX(-50%);
   padding: 9px 26px; border-radius: 999px; font-size: 14px; letter-spacing: .3em; text-indent: .3em;
   background: var(--glass); border: 1px solid var(--line); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); transition: opacity .8s; }
@@ -95,6 +95,20 @@ body.night #breathText { text-shadow: 0 1px 12px rgba(0, 0, 0, .5); }
 .card .big { margin: 0 0 8px; font-size: 20px; letter-spacing: .12em; font-weight: 600; }
 .card p { margin: 0 0 16px; font-size: 14px; color: var(--ink-soft); }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } }
+
+/* ---------- sleep */
+.sleep { position: fixed; inset: 0; z-index: 20; display: none; place-items: center; padding: 24px;
+  background: radial-gradient(circle at 50% 40%, #121a36, #04060f 70%); color: #d9def5; }
+.sleep.on { display: grid; animation: fadeIn 1.5s ease both; }
+.sleep-box { text-align: center; max-width: 320px; }
+.sleep .moon { font-size: 44px; margin: 0 0 10px; }
+.sleep .big { font-size: 22px; letter-spacing: .3em; text-indent: .3em; margin: 0 0 12px; }
+.sleep p { margin: 0 0 10px; font-size: 15px; color: rgba(217, 222, 245, .75); font-variant-numeric: tabular-nums; }
+.sleep .note { font-size: 13px; color: rgba(217, 222, 245, .5); }
+.ghost-btn { margin-top: 26px; padding: 10px 28px; border-radius: 999px; font-size: 14px; letter-spacing: .25em; text-indent: .25em;
+  border: 1px solid rgba(217, 222, 245, .3); color: #d9def5; }
+.note.big { font-size: 13px; line-height: 1.7; margin: 0 0 4px; }
+.wide-start { margin-top: 18px; }
 
 .week { display: flex; justify-content: center; gap: 10px; margin: 6px 0 18px; }
 .week div { display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 11px; color: var(--ink-soft); }
@@ -145,6 +159,3 @@ input[type=checkbox] { width: 20px; height: 20px; accent-color: var(--accent); }
 .stats b { display: block; font-size: 24px; font-weight: 600; }
 .stats small { font-size: 12px; color: var(--ink-soft); }
 
-@media (min-width: 900px) {
-  .breath { bottom: 7vh; }
-}

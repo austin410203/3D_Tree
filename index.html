@@ -46,6 +46,7 @@
       <button data-sheet="sound"><span>🎧</span>聲音</button>
       <button data-sheet="breath"><span>🍃</span>呼吸</button>
       <button data-sheet="scene"><span>🌳</span>場景</button>
+      <button data-sheet="sleep"><span>🌙</span>入睡</button>
       <button data-sheet="stats"><span>📖</span>紀錄</button>
     </nav>
   </section>
@@ -110,6 +111,16 @@
   <button id="regrow" class="wide">重新長一棵樹</button>
 </section>
 
+<section class="sheet" id="sheet-sleep">
+  <header><h2>入睡</h2><button class="close" aria-label="關閉">✕</button></header>
+  <p class="note big">邊聽邊睡：開始後可以直接關掉螢幕，聲音會繼續播放；時間到前一分鐘會慢慢轉小聲，然後停止。</p>
+  <h3>多久後停止</h3>
+  <div class="chips" id="sleepTimes"></div>
+  <h3>聲音</h3>
+  <div class="chips" id="sleepSounds"></div>
+  <button id="sleepStart" class="start small wide-start">開始入睡</button>
+</section>
+
 <section class="sheet" id="sheet-stats">
   <header><h2>紀錄</h2><button class="close" aria-label="關閉">✕</button></header>
   <div class="stats" id="stats"></div>
@@ -119,6 +130,16 @@
     <label class="row">提醒時間<input id="remindTime" type="time" value="21:30"></label>
   </div>
 </section>
+
+<div id="sleep" class="sleep">
+  <div class="sleep-box">
+    <p class="moon">🌙</p>
+    <p class="big" id="sleepTitle">入睡中</p>
+    <p id="sleepLeft">還有 30:00，之後慢慢停止</p>
+    <p class="note" id="sleepNote">可以直接關掉螢幕，聲音會繼續播放</p>
+    <button id="sleepEnd" class="ghost-btn">結束入睡</button>
+  </div>
+</div>
 
 <script type="module" src="app.js"></script>
 </body>

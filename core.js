@@ -108,6 +108,8 @@ export const world = {
   // tap at normalised device coords (-1..1)
   tap(x, y) { active?.tap ? active.tap(new THREE.Vector2(x, y)) : active?.drop?.(8, 0.5); },
   regrow() { active?.regrow?.(); },
+  // stop drawing (sleep mode: nothing to look at, save the battery)
+  setPaused(on) { renderer.setAnimationLoop(on ? null : () => frame(clock.getDelta())); if (!on) clock.getDelta(); },
   sceneMix(night) { return active?.sound?.(night) ?? {}; },
 };
 
