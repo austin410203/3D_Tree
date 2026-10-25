@@ -314,5 +314,5 @@ export default {
   },
   drop(n) { for (let i = 0; i < Math.min(6, n); i++) ripple((Math.random() - 0.5) * 6, (Math.random() - 0.5) * 6, 0.8); },
   gust() { for (let i = 0; i < 5; i++) ripple((Math.random() - 0.5) * 10, (Math.random() - 0.5) * 8, 0.9); },
-  sound: night => (night ? { crickets: 0.45, stream: 0.25, windchime: 0.2 } : { stream: 0.35, birds: 0.35, windchime: 0.25, rain: 0.12 }),
+  sound: night => (night ? { crickets: 0.5, windchime: 0.25, stream: 0.2 } : { stream: 0.35, birds: 0.45, windchime: 0.3 }),
 };

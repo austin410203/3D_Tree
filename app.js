@@ -18,7 +18,7 @@ const store = {
   set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* private mode */ } },
 };
 const settings = store.get('seasontree.settings', {
-  minutes: 5, sleepMinutes: 30, pattern: 'natural', cue: true, bowl: true, haptic: false,
+  minutes: 5, sleepMinutes: 30, sleepPreset: 'scene', pattern: 'natural', cue: true, bowl: true, haptic: false,
   scene: 'tree', season: 'auto', time: 'auto', wind: 0.4, fall: 1, preset: 'scene', mix: {}, master: 0.8,
   remind: false, remindTime: '21:30', lang: detectLang(),
 });
@@ -71,7 +71,9 @@ const sceneText = id => t(`scene.${id}`);
 // scene switch: sheet controls, subtitle and the "跟著場景" sound all follow it
 world.onScene = () => { applyScene(true); refreshChips(); };
 async function pickScene(id) {
-  settings.scene = id; save();
+  settings.scene = id;
+  if (settings.preset !== 'off') settings.preset = 'scene';
+  save();
   await world.setScene(id);
 }
 world.onSeason = () => { updateSubtitle(); if (settings.preset === 'scene') applySound(); refreshChips(); };
@@ -112,8 +114,8 @@ function startSleep() {
   if (sess.on) finishSession(false);
   engine.start();
   sleep.silenced = false;
-  if (settings.preset === 'off') settings.preset = 'sleep';
-  save();
+  sleep.prevPreset = settings.preset;
+  settings.preset = settings.sleepPreset;
   applySound();
   Object.assign(sleep, { on: true, end: settings.sleepMinutes ? engine.ctx.currentTime + settings.sleepMinutes * 60 : 0 });
   if (sleep.end) engine.fadeOutAt(sleep.end, Math.min(SLEEP_FADE, settings.sleepMinutes * 30));
@@ -136,7 +138,6 @@ function updateSleep() {
     if (!sleep.silenced) {
       // the fade has already happened on the audio clock; now actually stop the tracks
       sleep.silenced = true;
-      settings.preset = 'off'; save();
       engine.setMix({});
       engine.cancelFade();
       syncMixer(); syncBackgroundAudio(); refreshChips();
@@ -156,6 +157,10 @@ function endSleep() {
   clearInterval(sleep.timer);
   engine.cancelFade();
   sleep.silenced = false;
+  settings.preset = sleep.prevPreset ?? settings.preset;
+  save();
+  applySound();
+  refreshChips();
   $('sleep').classList.remove('on');
   world.setPaused(false);
   syncBackgroundAudio();
@@ -399,7 +404,7 @@ function refreshChips() {
   for (const sc of SCENES) {
     const b = document.createElement('button');
     const [sn, sd] = sceneText(sc.id);
-    b.innerHTML = `<span class="ico" data-ico="scene-${sc.id}">${sc.icon}</span><b>${sn}</b><small>${sd}</small>`;
+    b.innerHTML = `<img class="ico" src="icons/ui/scene-${sc.id}.png" alt="" data-fallback="${sc.icon}"><b>${sn}</b><small>${sd}</small>`;
     b.classList.toggle('on', sc.id === world.scene);
     b.onclick = () => { pickScene(sc.id); closeSheets(); };
     $('sceneList').appendChild(b);
@@ -415,8 +420,8 @@ function refreshChips() {
   chips($('seasonChips'), seasonItems, it => it.id === settings.season, it => { settings.season = it.id; save(); applyScene(); });
   chips($('sleepTimes'), SLEEP_TIMES.map(m => ({ id: m, name: m ? t('sleepMin', m) : t('noStop') })),
     it => it.id === settings.sleepMinutes, it => { settings.sleepMinutes = it.id; save(); });
-  chips($('sleepSounds'), PRESETS.filter(p => p.id !== 'off' && p.id !== 'custom').map(p => ({ ...p, name: t(`preset.${p.id}`) })), p => p.id === settings.preset,
-    p => { settings.preset = p.id; save(); engine.start(); applySound(); });
+  chips($('sleepSounds'), PRESETS.filter(p => p.id !== 'off' && p.id !== 'custom').map(p => ({ ...p, name: t(`preset.${p.id}`) })), p => p.id === settings.sleepPreset,
+    p => { settings.sleepPreset = p.id; save(); });
   const timeItems = [{ id: 'auto', name: t('followClock') }, { id: 'day', name: t('day') }, { id: 'night', name: t('night') }];
   $('langList').innerHTML = '';
   for (const l of LANGS) {
@@ -545,6 +550,12 @@ native.onBack(() => {
   if ($('done').classList.contains('on')) { $('doneOk').click(); return true; }
   return false;
 });
+
+// icons: fall back to the emoji if an image fails to load
+addEventListener('error', e => {
+  const el = e.target;
+  if (el.tagName === 'IMG' && el.dataset.fallback) { const s = document.createElement('span'); s.className = 'ico-emoji'; s.textContent = el.dataset.fallback; el.replaceWith(s); }
+}, true);
 
 // ---------------------------------------------------------------- boot
 setLang(settings.lang);

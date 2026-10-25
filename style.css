@@ -58,20 +58,11 @@ button { font: inherit; color: inherit; cursor: pointer; border: 0; background: 
   backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1px solid var(--line); box-shadow: var(--shadow); }
 .tools button { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 8px 0; border-radius: 12px; font-size: 12px; }
 .tools button span { font-size: 19px; line-height: 1; }
-/* Gemini-drawn icons replace the emoji placeholders */
-.ico[data-ico] { display: inline-block; width: 28px; height: 28px; font-size: 0; background: center / contain no-repeat; }
-.list.scenes .ico[data-ico], .tools button .ico[data-ico] { font-size: 0; }
-.list.scenes .ico[data-ico] { width: 34px; height: 34px; }
-.ico[data-ico="sound"] { background-image: url(icons/ui/sound.png); }
-.ico[data-ico="breath"] { background-image: url(icons/ui/breath.png); }
-.ico[data-ico="scene"] { background-image: url(icons/ui/scene.png); }
-.ico[data-ico="sleep"] { background-image: url(icons/ui/sleep.png); }
-.ico[data-ico="stats"] { background-image: url(icons/ui/stats.png); }
-.ico[data-ico="scene-tree"] { background-image: url(icons/ui/scene-tree.png); }
-.ico[data-ico="scene-sea"] { background-image: url(icons/ui/scene-sea.png); }
-.ico[data-ico="scene-lotus"] { background-image: url(icons/ui/scene-lotus.png); }
-.ico[data-ico="scene-candle"] { background-image: url(icons/ui/scene-candle.png); }
-.ico[data-ico="scene-aurora"] { background-image: url(icons/ui/scene-aurora.png); }
+/* Gemini-drawn icons */
+img.ico { display: block; width: 28px; height: 28px; object-fit: contain; }
+.list.scenes img.ico { width: 34px; height: 34px; grid-row: span 2; justify-self: center; }
+.sleep img.big-ico { width: 64px; height: 64px; margin: 0 auto; }
+.ico-emoji { font-size: 22px; line-height: 1; }
 .tools button em { font-style: normal; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
 .tools button:active { background: var(--chip-on); }
 
@@ -168,7 +159,7 @@ input[type=checkbox] { width: 20px; height: 20px; accent-color: var(--accent); }
 .list button.on { border-color: var(--accent); }
 .list b { display: block; font-size: 15px; font-weight: 600; }
 .list.scenes { grid-template-columns: 1fr 1fr; }
-.list.scenes button { display: grid; grid-template-columns: 30px 1fr; column-gap: 8px; align-items: center; padding: 10px 12px; }
+.list.scenes button { display: grid; grid-template-columns: 36px 1fr; column-gap: 8px; align-items: center; padding: 10px 12px; }
 .list.scenes span { grid-row: span 2; font-size: 24px; text-align: center; }
 .list.scenes small { line-height: 1.35; }
 [hidden] { display: none !important; }

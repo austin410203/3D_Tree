@@ -42,18 +42,19 @@ const rand = (a, b) => a + Math.random() * (b - a);
 export const TRACKS = [
   { id: 'wind', name: '風聲', icon: '🌬️', build(e, out) {
     const src = e.loop('pink');
-    const bp = e.ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = 0.7; bp.frequency.value = 500;
-    const g = e.ctx.createGain(); g.gain.value = 0.6;
-    src.connect(bp).connect(g).connect(out);
+    const bp = e.ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = 1.1; bp.frequency.value = 900;
+    const cut = e.ctx.createBiquadFilter(); cut.type = 'highpass'; cut.frequency.value = 350;
+    const g = e.ctx.createGain(); g.gain.value = 0.2;
+    src.connect(cut).connect(bp).connect(g).connect(out);
     const rs = e.loop('white');
     const hp = e.ctx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 2600;
     const rg = e.ctx.createGain(); rg.gain.value = 0.02;
     rs.connect(hp).connect(rg).connect(out);
     return { update({ wind, t }) {
       const sway = 0.5 + 0.5 * Math.sin(t * 0.37) * Math.sin(t * 0.13 + 1);
-      e.to(bp.frequency, 260 + 700 * Math.min(1, wind) * (0.6 + 0.4 * sway), 0.4);
-      e.to(g.gain, 0.25 + 0.75 * Math.min(1.2, wind) * (0.5 + 0.5 * sway), 0.4);
-      e.to(rg.gain, 0.012 + 0.06 * Math.min(1.2, wind) * sway, 0.3);
+      e.to(bp.frequency, 650 + 900 * Math.min(1, wind) * (0.5 + 0.5 * sway), 0.6);
+      e.to(g.gain, (0.14 + 0.6 * Math.min(1.2, wind)) * (0.4 + 0.6 * sway), 0.8);
+      e.to(rg.gain, 0.01 + 0.05 * Math.min(1.2, wind) * sway, 0.4);
     } };
   } },
   { id: 'rain', name: '雨聲', icon: '🌧️', build(e, out) {
@@ -64,7 +65,7 @@ export const TRACKS = [
     hiss.connect(hp).connect(lp).connect(hg).connect(out);
     const rumble = e.loop('brown');
     const rl = e.ctx.createBiquadFilter(); rl.type = 'lowpass'; rl.frequency.value = 380;
-    const rgain = e.ctx.createGain(); rgain.gain.value = 0.35;
+    const rgain = e.ctx.createGain(); rgain.gain.value = 0.1;
     rumble.connect(rl).connect(rgain).connect(out);
     let next = 0;
     return { tick(now) { // individual drops on leaves and the roof
@@ -92,7 +93,7 @@ export const TRACKS = [
     });
     const base = e.loop('brown');
     const bl = e.ctx.createBiquadFilter(); bl.type = 'lowpass'; bl.frequency.value = 700;
-    const bg = e.ctx.createGain(); bg.gain.value = 0.3;
+    const bg = e.ctx.createGain(); bg.gain.value = 0.06;
     base.connect(bl).connect(bg).connect(out);
     return { tick(now) { // babbling: band centres wander quickly
       for (const b of bands) {
@@ -163,8 +164,8 @@ export const TRACKS = [
   } },
   { id: 'fire', name: '燭火', icon: '🔥', build(e, out) {
     const roar = e.loop('pink');
-    const lp = e.ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 420;
-    const rg = e.ctx.createGain(); rg.gain.value = 0.35;
+    const lp = e.ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 260;
+    const rg = e.ctx.createGain(); rg.gain.value = 0.07;
     roar.connect(lp).connect(rg).connect(out);
     let next = 0;
     return { tick(now) { // soft crackles, sometimes in little clusters
@@ -246,16 +247,16 @@ export const PRESETS = [
 // mix that matches what is on screen: season (0..3) and night flag
 export function sceneMix(season, night) {
   if (night) return [
-    { crickets: 0.45, wind: 0.25, drone: 0.15 },
-    { crickets: 0.6, stream: 0.25, wind: 0.2 },
-    { crickets: 0.35, wind: 0.35, rain: 0.2 },
-    { wind: 0.35, drone: 0.25, brown: 0.2 },
+    { crickets: 0.4, windchime: 0.15, wind: 0.2 },
+    { crickets: 0.55, stream: 0.25 },
+    { crickets: 0.3, wind: 0.35, rain: 0.15 },
+    { wind: 0.4, drone: 0.3, windchime: 0.1 },
   ][season];
   return [
-    { birds: 0.6, wind: 0.35, stream: 0.25 },
-    { birds: 0.45, stream: 0.4, wind: 0.25 },
-    { wind: 0.55, rain: 0.25, birds: 0.15 },
-    { wind: 0.45, drone: 0.2, brown: 0.15 },
+    { birds: 0.6, windchime: 0.18, wind: 0.25 },
+    { birds: 0.45, stream: 0.3, wind: 0.2 },
+    { wind: 0.45, birds: 0.2, rain: 0.15 },
+    { wind: 0.45, windchime: 0.22, drone: 0.15 },
   ][season];
 }
 
