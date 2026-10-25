@@ -109,13 +109,19 @@ def main():
         save(round_mask(legacy), os.path.join(d, 'ic_launcher_round.png'), n)
         save(fg, os.path.join(d, 'ic_launcher_foreground.png'), n * 108 // 48)
 
-    # splash: plain field with a small tree in the middle, same sizes as the template
+    # splash: the illustrated launch art cropped to fill each template size,
+    # falling back to a plain field with the icon in the middle
+    splash_art = os.path.join(ROOT, 'art', 'splash_src.png')
     small = round_corners(full, 0.22) if os.path.exists(art_path) else tree(1.0, background=False)
     for folder in os.listdir(res):
         p = os.path.join(res, folder, 'splash.png')
         if not os.path.exists(p):
             continue
         w, h = Image.open(p).size
+        if os.path.exists(splash_art):
+            from PIL import ImageOps
+            ImageOps.fit(Image.open(splash_art).convert('RGB'), (w, h), Image.LANCZOS, centering=(0.5, 0.45)).save(p, optimize=True)
+            continue
         img = Image.new('RGB', (w, h), BG)
         k = int(min(w, h) * 0.42)
         t = small.resize((k, k), Image.LANCZOS)

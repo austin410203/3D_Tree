@@ -41,18 +41,23 @@ button { font: inherit; color: inherit; cursor: pointer; border: 0; background: 
 .title p { margin: 4px 0 0; font-size: 13px; letter-spacing: .2em; color: var(--ink-soft); }
 
 /* ---------- intro */
-.intro { position: fixed; inset: 0; z-index: 40; display: grid; place-items: center; padding: 24px;
-  background: radial-gradient(circle at 50% 38%, #fbe9f1 0%, #f1dcef 45%, #dcd3f0 100%); color: #3b3346;
+.intro { position: fixed; inset: 0; z-index: 40; display: flex; flex-direction: column; align-items: center; padding: 24px;
+  padding-top: calc(var(--sat) + 13vh); color: #3b3346;
+  background: linear-gradient(to bottom, rgba(255, 246, 252, .55), rgba(255, 246, 252, 0) 38%),
+    url(icons/intro.jpg) center 45% / cover no-repeat, #e9d9ef;
   transition: opacity .9s ease, visibility .9s; }
 .intro.out { opacity: 0; visibility: hidden; }
-.intro-box { text-align: center; animation: introIn 1.2s ease both; }
-.intro-icon { width: 128px; height: 128px; border-radius: 30px; box-shadow: 0 14px 40px rgba(120, 80, 140, .28); }
-.intro h1 { margin: 22px 0 8px; font-size: 30px; letter-spacing: .25em; text-indent: .25em; font-weight: 600; }
+.intro-box { text-align: center; animation: introIn 1.4s ease both; }
+.intro-icon { width: 76px; height: 76px; border-radius: 20px; box-shadow: 0 10px 30px rgba(120, 80, 140, .3); }
+.intro h1 { margin: 16px 0 8px; font-size: 32px; letter-spacing: .25em; text-indent: .25em; font-weight: 600;
+  text-shadow: 0 1px 18px rgba(255, 255, 255, .9); }
 :lang(en) .intro h1, :lang(ko) .intro h1 { letter-spacing: .06em; text-indent: .06em; }
-.intro-tag { margin: 0 0 18px; font-size: 15px; letter-spacing: .2em; color: rgba(59, 51, 70, .75); }
-.intro-feat { margin: 0; font-size: 12px; letter-spacing: .08em; color: rgba(59, 51, 70, .5); }
-.intro-tap { position: absolute; left: 0; right: 0; bottom: calc(var(--sab) + 48px); margin: 0; text-align: center;
-  font-size: 14px; letter-spacing: .3em; color: rgba(59, 51, 70, .6); animation: pulse 2.4s ease-in-out infinite; }
+.intro-tag { margin: 0; font-size: 15px; letter-spacing: .2em; color: rgba(59, 51, 70, .8); text-shadow: 0 1px 12px rgba(255, 255, 255, .9); }
+.intro-feat { position: absolute; left: 50%; bottom: calc(var(--sab) + 92px); transform: translateX(-50%); margin: 0;
+  padding: 7px 16px; border-radius: 999px; white-space: nowrap; font-size: 12px; letter-spacing: .08em; color: #3b3346;
+  background: rgba(255, 255, 255, .6); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+.intro-tap { position: absolute; left: 0; right: 0; bottom: calc(var(--sab) + 44px); margin: 0; text-align: center;
+  font-size: 14px; letter-spacing: .3em; color: #fff; text-shadow: 0 1px 10px rgba(40, 20, 60, .6); animation: pulse 2.4s ease-in-out infinite; }
 @keyframes introIn { from { opacity: 0; transform: translateY(14px) scale(.97); } }
 @keyframes pulse { 50% { opacity: .35; } }
 
