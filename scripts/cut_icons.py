@@ -1,6 +1,7 @@
-"""Cuts a Gemini icon sheet (5 columns x 2 rows on white) into transparent PNGs.
+"""Cuts a Gemini icon sheet (a grid of icons on white) into transparent PNGs.
 
     python scripts/cut_icons.py art/ui_icons_src.jpg
+    python scripts/cut_icons.py art/scene_icons2_src.jpg 3 2 scene-rain,scene-snow,scene-camp,scene-whale,scene-overlook,scene-lighthouse
 """
 import os
 import sys
@@ -35,16 +36,16 @@ def bands(profile, n):
     return runs
 
 
-def main(src):
+def main(src, ncols=5, nrows=2, names=NAMES):
     im = np.asarray(Image.open(src).convert('RGB')).astype(np.float32)
     d = 255 - im.min(axis=2)                  # distance from white
     mask = ndimage.binary_opening(d > 18, iterations=2)
-    rows = bands(mask.sum(axis=1), 2)
+    rows = bands(mask.sum(axis=1), nrows)
     out_dir = os.path.join(ROOT, 'icons', 'ui')
     os.makedirs(out_dir, exist_ok=True)
     k = 0
     for r0, r1 in rows:
-        cols = bands(mask[r0:r1].sum(axis=0), 5)
+        cols = bands(mask[r0:r1].sum(axis=0), ncols)
         for c0, c1 in cols:
             sub = mask[r0:r1, c0:c1]
             ys, xs = np.nonzero(sub)
@@ -52,6 +53,12 @@ def main(src):
             crop = im[y0:y1, x0:x1]
             dist = 255 - crop.min(axis=2)
             a = np.clip((dist - 6) / 34, 0, 1)
+            # only white connected to the outside is background; white inside the icon stays opaque
+            pad = np.pad(dist < 40, 1, constant_values=True)
+            lab, _ = ndimage.label(pad)
+            outside = (lab == lab[0, 0])[1:-1, 1:-1]
+            a = np.where(outside, a, 1.0)
+            a = np.maximum(a, ndimage.gaussian_filter(np.where(outside, 0.0, 1.0), 0.7) * (dist >= 6))
             # un-blend the white background from the soft edge pixels
             safe = np.maximum(a, 1e-3)[..., None]
             rgb = np.clip((crop - 255 * (1 - safe)) / safe, 0, 255)
@@ -60,10 +67,13 @@ def main(src):
             side = int(max(h, w) * 1.08)
             canvas = Image.new('RGBA', (side, side), (0, 0, 0, 0))
             canvas.paste(Image.fromarray(rgba, 'RGBA'), ((side - w) // 2, (side - h) // 2))
-            canvas.resize((OUT, OUT), Image.LANCZOS).save(os.path.join(out_dir, NAMES[k] + '.png'), optimize=True)
-            print(NAMES[k], (x0, y0, x1, y1))
+            canvas.resize((OUT, OUT), Image.LANCZOS).save(os.path.join(out_dir, names[k] + '.png'), optimize=True)
+            print(names[k], (x0, y0, x1, y1))
             k += 1
 
 
 if __name__ == '__main__':
-    main(sys.argv[1])
+    if len(sys.argv) > 2:
+        main(sys.argv[1], int(sys.argv[2]), int(sys.argv[3]), sys.argv[4].split(','))
+    else:
+        main(sys.argv[1])

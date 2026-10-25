@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { camera, controls } from '../core.js';
-import { makeMotes, toonRamp, mulberry32 } from './common.js';
+import { makeMotes, toonRamp, mulberry32, flameMaterial, glowTexture } from './common.js';
 
 // 燭光: a candle on a low table in a dark room. The flame stretches and brightens
 // on the inhale and settles on the exhale; sparks drift up from the wick.
@@ -59,51 +59,7 @@ function candleGeometry(r, h) {
 
 const flames = [];
 const flameU = { uTime: { value: 0 } };
-const flameMat = () => new THREE.ShaderMaterial({
-  uniforms: { uTime: flameU.uTime, uSway: { value: 0 }, uSeed: { value: Math.random() * 10 }, uBright: { value: 1 } },
-  transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
-  vertexShader: /* glsl */`
-    varying vec2 vUv;
-    void main() {
-      vUv = vec2(position.x, position.y + 0.5);
-      // billboard: quad stays upright but always faces the camera
-      vec4 mv = modelViewMatrix * vec4(0.0, 0.0, 0.0, 1.0);
-      vec3 sx = vec3(length(modelMatrix[0].xyz), length(modelMatrix[1].xyz), 1.0);
-      mv.xy += vec2(position.x * sx.x, (position.y + 0.5) * sx.y);
-      gl_Position = projectionMatrix * mv;
-    }`,
-  fragmentShader: /* glsl */`
-    uniform float uTime, uSway, uSeed, uBright;
-    varying vec2 vUv;
-    void main() {
-      float y = vUv.y;
-      float wob = sin(uTime * 2.3 + uSeed) * 0.5 + sin(uTime * 5.1 + uSeed * 2.0) * 0.25;
-      float x = vUv.x - (uSway + wob * 0.12) * y * y;
-      float w = 0.36 * sqrt(clamp(y * 3.0, 0.0, 1.0)) * pow(max(1.0 - y, 0.0), 0.85);
-      float d = abs(x) / max(w, 1e-3);
-      if (d > 1.0 || y < 0.0) discard;
-      float edge = 1.0 - smoothstep(0.55, 1.0, d);
-      vec3 hot = vec3(1.0, 0.97, 0.85), mid = vec3(1.0, 0.72, 0.28), rim = vec3(0.95, 0.35, 0.12);
-      vec3 c = mix(hot, mid, smoothstep(0.15, 0.6, d + y * 0.5));
-      c = mix(c, rim, smoothstep(0.65, 1.0, d + y * 0.35));
-      c = mix(c, vec3(0.35, 0.5, 1.0), (1.0 - smoothstep(0.0, 0.16, y)) * 0.7); // blue base
-      float a = edge * smoothstep(0.0, 0.05, y) * (1.0 - smoothstep(0.85, 1.0, y));
-      gl_FragColor = vec4(c * a * uBright, 1.0);
-    }`,
-});
-
-let glowTex;
-function glowTexture() {
-  if (glowTex) return glowTex;
-  const c = document.createElement('canvas'); c.width = c.height = 128;
-  const g = c.getContext('2d');
-  const gr = g.createRadialGradient(64, 64, 0, 64, 64, 64);
-  gr.addColorStop(0, 'rgba(255,200,120,1)'); gr.addColorStop(0.25, 'rgba(255,150,70,0.45)'); gr.addColorStop(1, 'rgba(255,120,40,0)');
-  g.fillStyle = gr; g.fillRect(0, 0, 128, 128);
-  glowTex = new THREE.CanvasTexture(c);
-  glowTex.colorSpace = THREE.SRGBColorSpace;
-  return glowTex;
-}
+const flameMat = () => flameMaterial(flameU.uTime);
 
 function addCandle(x, z, r, h, flameH, light) {
   const body = new THREE.Mesh(candleGeometry(r, h), waxMat);

@@ -51,8 +51,10 @@ function applyScene(instant = false) {
   // candle and aurora are night scenes whatever the clock says
   nightNow = !info.dayNight ? 1 : settings.time === 'auto' ? nightFromClock() : settings.time === 'night' ? 1 : 0;
   world.setNight(nightNow, instant);
-  document.body.classList.toggle('night', nightNow >= 0.5);
-  native.statusBar(nightNow >= 0.5);
+  // dark scenes (a dim room) keep the light-on-dark UI even in the daytime
+  const darkUI = nightNow >= 0.5 || !!info.darkUI;
+  document.body.classList.toggle('night', darkUI);
+  native.statusBar(darkUI);
   world.setWind(sess.on ? Math.min(settings.wind, 0.3) : settings.wind);
   world.setFall(settings.fall);
   updateSubtitle();

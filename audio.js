@@ -205,6 +205,140 @@ export const TRACKS = [
       }
     } };
   } },
+  { id: 'campfire', name: '營火', icon: '🏕️', build(e, out) {
+    const roar = e.loop('pink');
+    const lp = e.ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 520;
+    const rg = e.ctx.createGain(); rg.gain.value = 0.2;
+    roar.connect(lp).connect(rg).connect(out);
+    let next = 0, pop = 0;
+    return { update({ t }) { e.to(rg.gain, 0.16 + 0.08 * Math.sin(t * 0.7) * Math.sin(t * 1.9), 0.3); },
+      tick(now) {
+        if (next < now) next = now;
+        while (next < now + e.lookahead) { // busy crackle of burning wood
+          next += Math.random() < 0.35 ? rand(0.01, 0.05) : rand(0.06, 0.35);
+          const s = e.ctx.createBufferSource(); s.buffer = e.buf('white');
+          const f = e.ctx.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = rand(1500, 5000); f.Q.value = rand(0.8, 3);
+          const g = e.ctx.createGain(); const a = rand(0.08, 0.5), d = rand(0.003, 0.02);
+          g.gain.setValueAtTime(a, next); g.gain.exponentialRampToValueAtTime(0.0001, next + d);
+          s.connect(f).connect(g).connect(out);
+          s.start(next, rand(0, NOISE_SECONDS - 0.1), d + 0.01);
+        }
+        if (pop < now) pop = now + rand(1, 4);
+        while (pop < now + e.lookahead) { // the odd deeper pop of a knot in the log
+          const o = e.ctx.createOscillator(); o.frequency.setValueAtTime(rand(90, 160), pop);
+          o.frequency.exponentialRampToValueAtTime(50, pop + 0.12);
+          const g = e.ctx.createGain(); g.gain.setValueAtTime(0.25, pop); g.gain.exponentialRampToValueAtTime(0.0001, pop + 0.15);
+          o.connect(g).connect(out); o.start(pop); o.stop(pop + 0.2);
+          pop += rand(2, 7);
+        }
+      } };
+  } },
+  { id: 'thunder', name: '遠雷', icon: '⛈️', build(e, out) {
+    let next = 0;
+    return { tick(now) {
+      if (next < now) next = now + rand(8, 25);
+      while (next < now + e.lookahead) {
+        const s = e.ctx.createBufferSource(); s.buffer = e.buf('brown');
+        const f = e.ctx.createBiquadFilter(); f.type = 'lowpass';
+        f.frequency.setValueAtTime(rand(250, 500), next); f.frequency.exponentialRampToValueAtTime(90, next + 5);
+        const g = e.ctx.createGain(); const peak = rand(0.5, 1), rise = rand(0.3, 1.2), dur = rand(4, 7);
+        g.gain.setValueAtTime(0.0001, next); g.gain.exponentialRampToValueAtTime(peak, next + rise);
+        g.gain.exponentialRampToValueAtTime(peak * 0.4, next + rise + 0.8);
+        g.gain.exponentialRampToValueAtTime(0.0001, next + dur);
+        s.connect(f).connect(g).connect(out);
+        s.start(next, rand(0, NOISE_SECONDS - dur), dur + 0.1);
+        next += rand(25, 70);
+      }
+    } };
+  } },
+  { id: 'whale', name: '鯨歌', icon: '🐋', build(e, out) {
+    // a long watery echo shared by every call
+    const wet = e.ctx.createGain(); wet.gain.value = 0.55;
+    const dl = e.ctx.createDelay(2); dl.delayTime.value = 0.7;
+    const fb = e.ctx.createGain(); fb.gain.value = 0.5;
+    const dlp = e.ctx.createBiquadFilter(); dlp.type = 'lowpass'; dlp.frequency.value = 700;
+    wet.connect(dl).connect(dlp).connect(fb).connect(dl);
+    dlp.connect(out);
+    let next = 0;
+    return { tick(now) {
+      if (next < now) next = now + rand(1, 4);
+      while (next < now + e.lookahead) {
+        const notes = 1 + Math.floor(Math.random() * 3);
+        let t = next;
+        for (let k = 0; k < notes; k++) {
+          const dur = rand(1.6, 4), f0 = rand(110, 360), f1 = f0 * rand(0.5, 1.9);
+          const o = e.ctx.createOscillator(); o.type = 'sine';
+          o.frequency.setValueAtTime(f0, t);
+          o.frequency.exponentialRampToValueAtTime(f1, t + dur * 0.6);
+          o.frequency.exponentialRampToValueAtTime(f0 * rand(0.7, 1.2), t + dur);
+          const o2 = e.ctx.createOscillator(); o2.type = 'triangle'; o2.frequency.value = 2; // gentle warble
+          const vib = e.ctx.createGain(); vib.gain.value = f0 * 0.02;
+          o2.connect(vib).connect(o.frequency);
+          const lp = e.ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 900;
+          const g = e.ctx.createGain();
+          g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.35, t + dur * 0.3);
+          g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+          o.connect(lp).connect(g); g.connect(out); g.connect(wet);
+          o.start(t); o.stop(t + dur + 0.1); o2.start(t); o2.stop(t + dur + 0.1);
+          t += dur * rand(0.7, 1.1);
+        }
+        next = t + rand(5, 14);
+      }
+    } };
+  } },
+  { id: 'gulls', name: '海鷗', icon: '🕊️', build(e, out) {
+    let next = 0;
+    return { tick(now) {
+      if (next < now) next = now + rand(0.5, 3);
+      while (next < now + e.lookahead) {
+        const calls = 1 + Math.floor(Math.random() * 4), pan = rand(-0.8, 0.8), far = rand(0.35, 1);
+        const p = e.ctx.createStereoPanner(); p.pan.value = pan; p.connect(out);
+        let t = next;
+        for (let k = 0; k < calls; k++) { // "kee-ow": a raspy rise then a long fall
+          const d = rand(0.25, 0.5), f0 = rand(1300, 1800);
+          const o = e.ctx.createOscillator(); o.type = 'sawtooth';
+          o.frequency.setValueAtTime(f0, t);
+          o.frequency.linearRampToValueAtTime(f0 * 1.35, t + d * 0.25);
+          o.frequency.exponentialRampToValueAtTime(f0 * 0.55, t + d);
+          const rasp = e.ctx.createOscillator(); rasp.frequency.value = rand(28, 45);
+          const rg = e.ctx.createGain(); rg.gain.value = 60;
+          rasp.connect(rg).connect(o.frequency);
+          const bp = e.ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 2200; bp.Q.value = 2.5;
+          const g = e.ctx.createGain();
+          g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.16 * far, t + 0.03);
+          g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+          o.connect(bp).connect(g).connect(p);
+          o.start(t); o.stop(t + d + 0.05); rasp.start(t); rasp.stop(t + d + 0.05);
+          t += d + rand(0.05, 0.25);
+        }
+        next = t + rand(2.5, 9);
+      }
+    } };
+  } },
+  { id: 'foghorn', name: '霧笛', icon: '📯', build(e, out) {
+    const dl = e.ctx.createDelay(3); dl.delayTime.value = 1.4;
+    const fb = e.ctx.createGain(); fb.gain.value = 0.35;
+    const lpE = e.ctx.createBiquadFilter(); lpE.type = 'lowpass'; lpE.frequency.value = 300;
+    dl.connect(lpE).connect(fb).connect(dl);
+    lpE.connect(out);
+    let next = 0;
+    return { tick(now) {
+      if (next < now) next = now + rand(3, 10);
+      while (next < now + e.lookahead) {
+        const t = next, dur = rand(2.2, 3.2);
+        const lp = e.ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 420;
+        const g = e.ctx.createGain();
+        g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.3, t + 0.35);
+        g.gain.setValueAtTime(0.3, t + dur - 0.8); g.gain.exponentialRampToValueAtTime(0.0001, t + dur + 0.8);
+        lp.connect(g); g.connect(out); g.connect(dl);
+        for (const f of [92, 92.7, 138]) {
+          const o = e.ctx.createOscillator(); o.type = 'sawtooth'; o.frequency.value = f;
+          o.connect(lp); o.start(t); o.stop(t + dur + 0.9);
+        }
+        next = t + rand(22, 40);
+      }
+    } };
+  } },
   { id: 'drone', name: '冥想音墊', icon: '🎐', build(e, out) {
     const lp = e.ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 900;
     const g = e.ctx.createGain(); g.gain.value = 0.5;
@@ -239,6 +373,9 @@ export const PRESETS = [
   { id: 'sea', name: '海邊', mix: { waves: 0.7, wind: 0.25 } },
   { id: 'candlelight', name: '燭光', mix: { fire: 0.45, drone: 0.3 } },
   { id: 'chimes', name: '風鈴', mix: { windchime: 0.5, wind: 0.3, birds: 0.15 } },
+  { id: 'storm', name: '雷雨', mix: { rain: 0.8, thunder: 0.5 } },
+  { id: 'camp', name: '營火', mix: { campfire: 0.65, crickets: 0.35 } },
+  { id: 'deep', name: '深海', mix: { whale: 0.6, drone: 0.25, brown: 0.12 } },
   { id: 'focus', name: '專注', mix: { pink: 0.6 } },
   { id: 'sleep', name: '入睡', mix: { brown: 0.55, rain: 0.3, drone: 0.15 } },
   { id: 'off', name: '安靜', mix: {} },
@@ -249,13 +386,13 @@ export function sceneMix(season, night) {
   if (night) return [
     { crickets: 0.4, windchime: 0.15, wind: 0.2 },
     { crickets: 0.55, stream: 0.25 },
-    { crickets: 0.3, wind: 0.35, rain: 0.15 },
+    { crickets: 0.35, wind: 0.35 },
     { wind: 0.4, drone: 0.3, windchime: 0.1 },
   ][season];
   return [
     { birds: 0.6, windchime: 0.18, wind: 0.25 },
     { birds: 0.45, stream: 0.3, wind: 0.2 },
-    { wind: 0.45, birds: 0.2, rain: 0.15 },
+    { wind: 0.45, birds: 0.3, windchime: 0.1 },
     { wind: 0.45, windchime: 0.22, drone: 0.15 },
   ][season];
 }
