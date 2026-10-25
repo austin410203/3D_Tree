@@ -1,5 +1,6 @@
 import * as THREE from 'three';
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { renderer, camera, controls } from './core.js';
+import { sceneMix } from './audio.js';
 
 // ---------------------------------------------------------------- seasons
 const SEASONS = [
@@ -22,26 +23,8 @@ const MAX_PARTICLES = 7000;
 const TRANSITION = 4.5; // seconds for a full season change
 const WIN = 0.12;       // per-leaf change window inside the 0..1 progress
 
-// ---------------------------------------------------------------- renderer
-const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-document.getElementById('app').appendChild(renderer.domElement);
-
 const scene = new THREE.Scene();
 scene.background = new THREE.Color();
-
-const camera = new THREE.PerspectiveCamera(35, 1, 0.1, 300);
-const controls = new OrbitControls(camera, renderer.domElement);
-controls.enableDamping = true;
-controls.enablePan = false;
-controls.minDistance = 7;
-controls.maxDistance = 45;
-controls.maxPolarAngle = Math.PI * 0.495;
-controls.autoRotate = true;
-controls.autoRotateSpeed = 0.3;
-renderer.domElement.addEventListener('pointerdown', () => { controls.autoRotate = false; });
 
 const LIGHT_DIR = new THREE.Vector3(7, 3.6, 2.6).normalize();
 const sun = new THREE.DirectionalLight(0xffffff, 2.0);
@@ -529,7 +512,7 @@ function setSeason(i) {
   applyPalette(U.uTA.value, U.uTB.value, U.uTC.value, T);
   U.uFShape.value = F.shape; U.uTShape.value = T.shape;
   U.uFSize.value = F.size; U.uTSize.value = T.size;
-  world.onSeason?.(to);
+  seasons.onChange?.(to);
 }
 function snapSeason(i) {
   from = to = cur = i; prog = 1;
@@ -539,7 +522,7 @@ function snapSeason(i) {
   U.uFShape.value = U.uTShape.value = S.shape;
   U.uFSize.value = U.uTSize.value = S.size;
   U.uProg.value = 0;
-  world.onSeason?.(to);
+  seasons.onChange?.(to);
 }
 
 function pickLeafColor(s) {
@@ -571,7 +554,6 @@ function updateSeason(dt) {
   const n = U.uNight.value;
   scene.background.copy(F.bg).lerp(T.bg, e);
   scene.background.lerp(tmpC.copy(F.nightBg).lerp(T.nightBg, e), n);
-  document.body.style.background = '#' + scene.background.getHexString();
   trunkMat.color.copy(F.trunk).lerp(T.trunk, e);
   groundMat.color.copy(F.ground).lerp(T.ground, e);
   shadowMat.color.copy(F.shadow).lerp(T.shadow, e).lerp(tmpC.set(0x0b1530), n);
@@ -623,12 +605,8 @@ const fireflies = new THREE.Points(fireGeo, new THREE.ShaderMaterial({
 fireflies.frustumCulled = false;
 scene.add(fireflies);
 
-// ---------------------------------------------------------------- state driven by the app layer
-const S = {
-  wind: 0.45, fall: 1, auto: false, autoT: 0, gustT: 0,
-  night: 0, nightTarget: 0, breath: 0, breathShown: 0,
-};
-const BASE_FOV = 35;
+// ---------------------------------------------------------------- scene API
+let auto = false, autoT = 0;
 
 function dropLeaves(n, push = 0.6) {
   if (!tree || growT < 1) return;
@@ -639,57 +617,29 @@ function dropLeaves(n, push = 0.6) {
   }
 }
 
-export const world = {
-  SEASONS,
-  onSeason: null,
+const seasons = {
+  onChange: null,
   get season() { return to; },
-  get busy() { return prog < 1; },
-  setSeason(i) { S.auto = false; setSeason(i); },
-  snapSeason(i) { S.auto = false; queued = -1; snapSeason(i); },
-  setAuto(on) { S.auto = on; S.autoT = 0; if (on) setSeason((to + 1) % 4); },
-  get auto() { return S.auto; },
-  setWind(v) { S.wind = v; },
-  get wind() { return S.wind; },
-  get windNow() { return U.uWind.value; },
-  setFall(v) { S.fall = v; },
-  setNight(v, instant = false) { S.nightTarget = v; if (instant) S.night = v; },
-  setBreath(v) { S.breath = v; },
-  setInteractive(on) { controls.enabled = on; },
-  setAutoRotate(speed) { controls.autoRotate = speed > 0; controls.autoRotateSpeed = speed; },
-  gust() { S.gustT = 3.5; },
-  dropLeaves,
-  regrow() { seed = 1 + Math.floor(Math.random() * 1e6); plantTree(); },
+  get auto() { return auto; },
+  set(i) { auto = false; setSeason(i); },
+  snap(i) { auto = false; queued = -1; snapSeason(i); },
+  setAuto(on) { auto = on; autoT = 0; if (on) setSeason((to + 1) % 4); },
 };
 
 // ---------------------------------------------------------------- loop
 let simT = 0, spawnAcc = 0, snowAcc = 0;
 
-function frame(dt) {
-  dt = Math.min(dt, 0.05);
+function frame(dt, S) {
   simT += dt;
   U.uTime.value = simT;
-
-  // wind with gusts
-  const base = S.wind;
-  S.gustT = Math.max(0, S.gustT - dt);
-  const gT = S.gustT;
-  const gust = gT > 0 ? Math.sin(Math.min(1, (3.5 - gT) / 0.6) * Math.PI / 2) * Math.min(1, gT / 1.2) : 0;
-  const wobble = 0.8 + 0.25 * Math.sin(simT * 0.7) + 0.15 * Math.sin(simT * 1.9 + 1);
-  const wind = Math.min(1.6, base * wobble + gust * 1.1);
+  const wind = S.windNow;
   U.uWind.value = wind;
-  const windSpeed = wind * 3.4;
 
   if (growT < 1) { growT = Math.min(1, growT + dt / 2.6); U.uGrow.value = growT; }
+  if (auto) { autoT += dt; if (autoT > 12 && prog >= 1) { autoT = 0; setSeason((to + 1) % 4); } }
 
-  if (S.auto) { S.autoT += dt; if (S.autoT > 12 && prog >= 1) { S.autoT = 0; setSeason((to + 1) % 4); } }
-
-  // day/night and breathing ease toward their targets
-  S.night += (S.nightTarget - S.night) * Math.min(1, dt * 0.8);
   U.uNight.value = S.night;
-  S.breathShown += (S.breath - S.breathShown) * Math.min(1, dt * 6);
   U.uBreath.value = S.breathShown;
-  const fov = BASE_FOV - 1.6 * S.breathShown;
-  if (Math.abs(camera.fov - fov) > 1e-3) { camera.fov = fov; camera.updateProjectionMatrix(); }
   fireU.uAmt.value = S.night * (to === 3 ? 0.15 : 1);
   fireU.uPx.value = renderer.getPixelRatio();
 
@@ -697,8 +647,7 @@ function frame(dt) {
 
   // ambient falling from the canopy
   if (growT >= 1) {
-    const fall = S.fall;
-    spawnAcc += dt * T.rate * fall * (0.3 + wind * 1.4) * (prog < 1 ? e : 1);
+    spawnAcc += dt * T.rate * S.fall * (0.3 + wind * 1.4) * (prog < 1 ? e : 1);
     while (spawnAcc >= 1) {
       spawnAcc -= 1;
       const i = Math.floor(Math.random() * LEAF_COUNT), o = i * 3;
@@ -714,31 +663,26 @@ function frame(dt) {
       SEASONS[3].leaves[2], 2, 0.06 + Math.random() * 0.06);
   }
 
-  updateParticles(dt, simT, windSpeed);
-  controls.update();
-  renderer.render(scene, camera);
+  updateParticles(dt, simT, wind * 3.4);
 }
 
-function resize() {
-  const w = innerWidth || 1, h = innerHeight || 1;
-  renderer.setSize(w, h);
-  camera.aspect = w / h;
-  camera.updateProjectionMatrix();
-  if (tree) fitCamera();
-}
-addEventListener('resize', resize);
-
-camera.position.set(3, 5, 16);
-resize();
 plantTree();
 snapSeason(0);
 
-const clock = new THREE.Clock();
-renderer.setAnimationLoop(() => frame(clock.getDelta()));
+export default {
+  scene,
+  frame,
+  fit: fitCamera,
+  controls: { minDist: 7 },
+  seasons,
+  drop: dropLeaves,
+  tap() { dropLeaves(8, 0.5); },
+  regrow() { seed = 1 + Math.floor(Math.random() * 1e6); plantTree(); },
+  sound: night => sceneMix(to, night),
+};
 
-// debug hook: the hidden preview pane throttles rAF, so tests pump frames by hand
+// debug hook
 window.__tree = {
-  frame(dt = 1 / 60, n = 1) { for (let i = 0; i < n; i++) frame(dt); },
-  setSeason, snapSeason, U, P, world, S,
+  U, P,
   get state() { return { from, to, prog, growT, alive: P.state.reduce((a, s) => a + (s ? 1 : 0), 0) }; },
 };

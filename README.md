@@ -11,8 +11,10 @@ The web version's first release (v1) is kept as the `v1.0-web` tag / `web-v1` br
 
 | File | Contents |
 |---|---|
-| `tree.js` | three.js scene, exports the `world` API (breathing, season, night, falling leaves…) |
-| `audio.js` | Web Audio engine: 10 synthesised sounds, presets, singing bowl / cue chimes, background pre-scheduling |
+| `core.js` | shared renderer, camera, wind, day/night and breathing state, scene switching (the `world` API) |
+| `tree.js` | 四季之樹 scene (seasons, falling leaves) |
+| `scenes/` | 海邊潮汐 `sea.js`, 蓮花池 `lotus.js`, 燭光 `candle.js`, 極光星空 `aurora.js`, shared tools `common.js` |
+| `audio.js` | Web Audio engine: 12 synthesised sounds, presets, singing bowl / cue chimes, background pre-scheduling |
 | `app.js` | UI, meditation flow, settings and records (localStorage) |
 | `native.js` | Capacitor plugin bridge; every call falls back to a web API on the web |
 | `vendor/three/` | three@0.170.0 (local, works offline) |

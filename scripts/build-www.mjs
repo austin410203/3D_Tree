@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const out = join(root, 'www');
-const FILES = ['index.html', 'style.css', 'app.js', 'tree.js', 'audio.js', 'native.js',
+const FILES = ['index.html', 'style.css', 'app.js', 'core.js', 'tree.js', 'audio.js', 'native.js', 'scenes',
   'manifest.webmanifest', 'sw.js', 'icons', 'vendor'];
 
 rmSync(out, { recursive: true, force: true });

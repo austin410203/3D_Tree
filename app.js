@@ -1,5 +1,5 @@
-import { world } from './tree.js';
-import { SoundEngine, TRACKS, PRESETS, sceneMix } from './audio.js';
+import { world, SCENES } from './core.js';
+import { SoundEngine, TRACKS, PRESETS } from './audio.js';
 import { native } from './native.js';
 
 // ---------------------------------------------------------------- data
@@ -20,7 +20,7 @@ const store = {
 };
 const settings = store.get('seasontree.settings', {
   minutes: 5, pattern: 'natural', cue: true, bowl: true, haptic: false,
-  season: 'auto', time: 'auto', wind: 0.4, fall: 1, preset: 'scene', mix: {}, master: 0.8,
+  scene: 'tree', season: 'auto', time: 'auto', wind: 0.4, fall: 1, preset: 'scene', mix: {}, master: 0.8,
   remind: false, remindTime: '21:30',
 });
 const stats = store.get('seasontree.stats', { days: {}, sessions: 0 });
@@ -41,12 +41,16 @@ function nightFromClock(d = new Date()) {
 let nightNow = 0;
 
 function applyScene(instant = false) {
-  if (settings.season === 'cycle') { if (!world.auto) world.setAuto(true); }
-  else {
-    const i = settings.season === 'auto' ? seasonFromDate() : settings.season;
-    instant ? world.snapSeason(i) : world.setSeason(i);
+  const info = world.info;
+  if (info.seasons) {
+    if (settings.season === 'cycle') { if (!world.auto) world.setAuto(true); }
+    else {
+      const i = settings.season === 'auto' ? seasonFromDate() : settings.season;
+      instant ? world.snapSeason(i) : world.setSeason(i);
+    }
   }
-  nightNow = settings.time === 'auto' ? nightFromClock() : settings.time === 'night' ? 1 : 0;
+  // candle and aurora are night scenes whatever the clock says
+  nightNow = !info.dayNight ? 1 : settings.time === 'auto' ? nightFromClock() : settings.time === 'night' ? 1 : 0;
   world.setNight(nightNow, instant);
   document.body.classList.toggle('night', nightNow >= 0.5);
   native.statusBar(nightNow >= 0.5);
@@ -56,14 +60,25 @@ function applyScene(instant = false) {
   if (settings.preset === 'scene') applySound();
 }
 function updateSubtitle() {
-  $('sub').textContent = `${SEASON_NAMES[world.season]}・${nightNow >= 0.5 ? '夜晚' : '白天'}`;
+  const info = world.info;
+  $('sceneName').textContent = info.name;
+  const parts = [];
+  if (info.seasons) parts.push(SEASON_NAMES[world.season]);
+  if (info.dayNight) parts.push(nightNow >= 0.5 ? '夜晚' : '白天');
+  $('sub').textContent = parts.join('・') || '靜心場景';
+}
+// scene switch: sheet controls, subtitle and the "跟著場景" sound all follow it
+world.onScene = () => { applyScene(true); refreshChips(); };
+async function pickScene(id) {
+  settings.scene = id; save();
+  await world.setScene(id);
 }
 world.onSeason = () => { updateSubtitle(); if (settings.preset === 'scene') applySound(); refreshChips(); };
 setInterval(() => { if (settings.time === 'auto' || settings.season === 'auto') applyScene(); }, 60000);
 
 // ---------------------------------------------------------------- sound
 function currentMix() {
-  if (settings.preset === 'scene') return sceneMix(world.season, nightNow >= 0.5);
+  if (settings.preset === 'scene') return world.sceneMix(nightNow >= 0.5);
   if (settings.preset === 'custom') return settings.mix;
   return PRESETS.find(p => p.id === settings.preset)?.mix || {};
 }
@@ -136,7 +151,7 @@ function startSession() {
   $('session').classList.add('on');
   $('session').classList.remove('quiet');
   $('breathText').textContent = '準備';
-  $('breathHint').textContent = sess.pattern.steps ? '放鬆肩膀，跟著樹一起呼吸' : '放鬆肩膀，自在地呼吸';
+  $('breathHint').textContent = sess.pattern.steps ? `放鬆肩膀，跟著${world.info.follow}一起呼吸` : '放鬆肩膀，自在地呼吸';
   $('ring').style.opacity = sess.pattern.steps ? 1 : 0;
   world.setInteractive(false);
   world.setAutoRotate(0.12);
@@ -311,6 +326,20 @@ function refreshChips() {
     b.onclick = () => { settings.pattern = p.id; save(); refreshChips(); };
     $('patterns').appendChild(b);
   }
+  $('sceneList').innerHTML = '';
+  for (const sc of SCENES) {
+    const b = document.createElement('button');
+    b.innerHTML = `<span>${sc.icon}</span><b>${sc.name}</b><small>${sc.desc}</small>`;
+    b.classList.toggle('on', sc.id === world.scene);
+    b.onclick = () => { pickScene(sc.id); closeSheets(); };
+    $('sceneList').appendChild(b);
+  }
+  const info = world.info;
+  $('seasonBox').hidden = !info.seasons;
+  $('timeBox').hidden = !info.dayNight;
+  $('fallLabel').textContent = info.fall;
+  $('regrow').hidden = !info.regrow;
+  $('regrow').textContent = info.regrow || '';
   const seasonItems = [{ id: 'auto', name: '跟著今天' }, ...SEASON_NAMES.map((n, i) => ({ id: i, name: n })), { id: 'cycle', name: '四季輪替' }];
   chips($('seasonChips'), seasonItems, it => it.id === settings.season, it => { settings.season = it.id; save(); applyScene(); });
   const timeItems = [{ id: 'auto', name: '跟著時間' }, { id: 'day', name: '白天' }, { id: 'night', name: '夜晚' }];
@@ -364,7 +393,7 @@ canvasHost.addEventListener('pointerup', e => {
   const wasFaded = $('ui').classList.contains('faded') || (sess.on && sess.quietT > 4);
   poke();
   if (!wasFaded) {
-    world.dropLeaves(8, 0.5);
+    world.tap(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
     if (settings.haptic) native.haptic('light');
   }
 });
@@ -418,6 +447,7 @@ native.onBack(() => {
 });
 
 // ---------------------------------------------------------------- boot
+await world.setScene(SCENES.some(s => s.id === settings.scene) ? settings.scene : 'tree', true);
 refreshChips();
 applyScene(true);
 world.setAutoRotate(0.3);
@@ -429,4 +459,4 @@ if ('serviceWorker' in navigator && location.protocol === 'https:' && !native.is
   navigator.serviceWorker.register('sw.js').catch(() => {});
 }
 
-window.__app = { step, settings, stats, engine, sess, startSession, finishSession, applyScene, openSheet };
+window.__app = { step, settings, stats, engine, sess, startSession, finishSession, applyScene, openSheet, pickScene };

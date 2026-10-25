@@ -161,6 +161,49 @@ export const TRACKS = [
       }
     } };
   } },
+  { id: 'fire', name: '燭火', icon: '🔥', build(e, out) {
+    const roar = e.loop('pink');
+    const lp = e.ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 420;
+    const rg = e.ctx.createGain(); rg.gain.value = 0.35;
+    roar.connect(lp).connect(rg).connect(out);
+    let next = 0;
+    return { tick(now) { // soft crackles, sometimes in little clusters
+      if (next < now) next = now;
+      while (next < now + e.lookahead) {
+        next += Math.random() < 0.25 ? rand(0.02, 0.08) : rand(0.15, 0.9);
+        const s = e.ctx.createBufferSource(); s.buffer = e.buf('white');
+        const f = e.ctx.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = rand(1200, 3500);
+        const g = e.ctx.createGain(); const a = rand(0.05, 0.3), d = rand(0.003, 0.012);
+        g.gain.setValueAtTime(a, next); g.gain.exponentialRampToValueAtTime(0.0001, next + d);
+        s.connect(f).connect(g).connect(out);
+        s.start(next, rand(0, NOISE_SECONDS - 0.1), d + 0.01);
+      }
+    } };
+  } },
+  { id: 'windchime', name: '風鈴', icon: '🔔', build(e, out) {
+    const NOTES = [523.3, 587.3, 659.3, 784, 880, 1046.5];
+    let next = 0;
+    return { tick(now) {
+      if (next < now) next = now + rand(0.5, 3);
+      while (next < now + e.lookahead) {
+        const strikes = 1 + Math.floor(Math.random() * 4);
+        let t = next;
+        for (let k = 0; k < strikes; k++) {
+          const f = NOTES[Math.floor(Math.random() * NOTES.length)];
+          const p = e.ctx.createStereoPanner(); p.pan.value = rand(-0.7, 0.7); p.connect(out);
+          for (const [m, a, dur] of [[1, 0.09, 3.5], [2.76, 0.03, 1.6], [5.4, 0.012, 0.8]]) {
+            const o = e.ctx.createOscillator(); o.frequency.value = f * m;
+            const g = e.ctx.createGain();
+            g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(a, t + 0.005);
+            g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+            o.connect(g).connect(p); o.start(t); o.stop(t + dur + 0.05);
+          }
+          t += rand(0.15, 0.6);
+        }
+        next = t + rand(2.5, 9);
+      }
+    } };
+  } },
   { id: 'drone', name: '冥想音墊', icon: '🎐', build(e, out) {
     const lp = e.ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 900;
     const g = e.ctx.createGain(); g.gain.value = 0.5;
@@ -193,6 +236,8 @@ export const PRESETS = [
   { id: 'rainnight', name: '雨夜', mix: { rain: 0.75, brown: 0.25, drone: 0.2 } },
   { id: 'summer', name: '夏夜', mix: { crickets: 0.55, wind: 0.3, stream: 0.25 } },
   { id: 'sea', name: '海邊', mix: { waves: 0.7, wind: 0.25 } },
+  { id: 'candlelight', name: '燭光', mix: { fire: 0.45, drone: 0.3 } },
+  { id: 'chimes', name: '風鈴', mix: { windchime: 0.5, wind: 0.3, birds: 0.15 } },
   { id: 'focus', name: '專注', mix: { pink: 0.6 } },
   { id: 'sleep', name: '入睡', mix: { brown: 0.55, rain: 0.3, drone: 0.15 } },
   { id: 'off', name: '安靜', mix: {} },
