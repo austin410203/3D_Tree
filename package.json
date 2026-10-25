@@ -2,7 +2,7 @@
   "name": "season-tree",
   "version": "0.2.0",
   "private": true,
-  "description": "四季之樹・靜心 — three.js meditation tree, web + Capacitor Android",
+  "description": "靜心時光 Calm Moments — three.js meditation scenes, web + Capacitor Android",
   "type": "module",
   "scripts": {
     "build:www": "node scripts/build-www.mjs",

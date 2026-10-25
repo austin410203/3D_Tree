@@ -32,7 +32,7 @@ public class AudioKeepAliveService extends Service {
 
         String title = intent != null ? intent.getStringExtra("title") : null;
         String text = intent != null ? intent.getStringExtra("text") : null;
-        Notification n = buildNotification(title != null ? title : "四季之樹", text != null ? text : "播放中");
+        Notification n = buildNotification(title != null ? title : "靜心時光", text != null ? text : "播放中");
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             startForeground(NOTIFICATION_ID, n, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK);
         } else {

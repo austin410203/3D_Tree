@@ -27,7 +27,7 @@ public class BackgroundAudioPlugin extends Plugin {
     @PluginMethod
     public void start(PluginCall call) {
         Intent intent = new Intent(getContext(), AudioKeepAliveService.class);
-        intent.putExtra("title", call.getString("title", "四季之樹"));
+        intent.putExtra("title", call.getString("title", "靜心時光"));
         intent.putExtra("text", call.getString("text", "播放中"));
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {

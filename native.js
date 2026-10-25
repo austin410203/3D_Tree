@@ -28,9 +28,9 @@ export const native = {
   },
 
   // foreground service so sound keeps playing with the screen off (Android only)
-  backgroundAudio(on, text) {
+  backgroundAudio(on, text, title = '靜心時光') {
     if (!P.BackgroundAudio) return;
-    (on ? P.BackgroundAudio.start({ title: '四季之樹', text }) : P.BackgroundAudio.stop()).catch(() => {});
+    (on ? P.BackgroundAudio.start({ title, text }) : P.BackgroundAudio.stop()).catch(() => {});
   },
   onBackgroundStop(fn) { P.BackgroundAudio?.addListener('stop', fn); },
 
@@ -49,7 +49,7 @@ export const native = {
 
   // daily reminder (local notification, repeats every day at hour:minute)
   get canRemind() { return !!P.LocalNotifications; },
-  async setReminder(on, hour, minute, body) {
+  async setReminder(on, hour, minute, body, title = '靜心時光') {
     const LN = P.LocalNotifications;
     if (!LN) return false;
     await LN.cancel({ notifications: [{ id: 1 }] }).catch(() => {});
@@ -57,7 +57,7 @@ export const native = {
     const perm = await LN.requestPermissions();
     if (perm.display !== 'granted') return false;
     await LN.schedule({ notifications: [{
-      id: 1, title: '四季之樹', body,
+      id: 1, title, body,
       schedule: { on: { hour, minute }, allowWhileIdle: true },
     }] });
     return true;

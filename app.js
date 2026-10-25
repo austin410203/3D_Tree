@@ -99,7 +99,7 @@ function syncBackgroundAudio() {
   const text = !engine.running || !names.length ? '' : (sess.on ? t('bgSession') : sleep.on ? t('bgSleep') : '') + names.slice(0, 3).join('・');
   if (text === bgAudioText) return;
   bgAudioText = text;
-  native.backgroundAudio(!!text, text);
+  native.backgroundAudio(!!text, text, t('appName'));
 }
 native.onBackgroundStop(() => { settings.preset = 'off'; save(); applySound(); refreshChips(); if (sleep.on) endSleep(); });
 document.addEventListener('visibilitychange', () => engine.setBackground(document.hidden));
@@ -402,6 +402,15 @@ function refreshChips() {
     b.onclick = () => { settings.pattern = p.id; save(); refreshChips(); };
     $('patterns').appendChild(b);
   }
+  $('sceneStrip').innerHTML = '';
+  for (const sc of SCENES) {
+    const b = document.createElement('button');
+    b.innerHTML = `<img src="icons/ui/scene-${sc.id}.png" alt="" data-fallback="${sc.icon}"><span>${sceneText(sc.id)[0]}</span>`;
+    b.classList.toggle('on', sc.id === world.scene);
+    b.onclick = () => pickScene(sc.id);
+    $('sceneStrip').appendChild(b);
+  }
+  $('sceneStrip').querySelector('.on')?.scrollIntoView({ inline: 'center', block: 'nearest' });
   $('sceneList').innerHTML = '';
   for (const sc of SCENES) {
     const b = document.createElement('button');
@@ -536,7 +545,7 @@ if (native.canRemind) {
     const [h, m] = settings.remindTime.split(':').map(Number);
     const lines = t('remindLines');
     const body = lines[Math.floor(Math.random() * lines.length)];
-    const ok = await native.setReminder(settings.remind, h, m, body);
+    const ok = await native.setReminder(settings.remind, h, m, body, t('appName'));
     if (!ok && settings.remind) { settings.remind = false; $('remind').checked = false; }
     save();
   };
@@ -558,6 +567,16 @@ addEventListener('error', e => {
   const el = e.target;
   if (el.tagName === 'IMG' && el.dataset.fallback) { const s = document.createElement('span'); s.className = 'ico-emoji'; s.textContent = el.dataset.fallback; el.replaceWith(s); }
 }, true);
+
+// ---------------------------------------------------------------- intro
+function closeIntro() {
+  const el = $('intro');
+  if (el.classList.contains('out')) return;
+  el.classList.add('out');
+  poke();
+}
+$('intro').addEventListener('pointerdown', () => { engine.start(); applySound(); closeIntro(); });
+setTimeout(closeIntro, 4200);
 
 // ---------------------------------------------------------------- boot
 setLang(settings.lang);

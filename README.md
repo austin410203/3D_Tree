@@ -1,4 +1,4 @@
-# 四季之樹・靜心 Season Tree
+# 靜心時光 Calm Moments
 
 A three.js four-season tree for breathing and relaxation: breathing guide, meditation timer, procedurally synthesised ambience and white noise, day/night, records.
 
@@ -29,5 +29,5 @@ npm run sync            # copy the web app into www/ and sync it into android/
 cd android && ./gradlew assembleDebug
 ```
 
-The APK is at `android/app/build/outputs/apk/debug/app-debug.apk`.
+The APK is at `android/app/build/outputs/apk/debug/app-debug.apk` (a copy is kept in `dist/`).
 Icons and the splash screen are regenerated with `python scripts/make_icons.py`; UI/scene icons are cut from Gemini sheets with `scripts/cut_icons.py`.

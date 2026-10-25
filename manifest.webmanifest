@@ -1,7 +1,7 @@
 {
-  "name": "四季之樹・靜心",
-  "short_name": "四季之樹",
-  "description": "跟著一棵四季的樹呼吸：呼吸引導、靜心計時與白噪音。",
+  "name": "靜心時光 Calm Moments",
+  "short_name": "靜心時光",
+  "description": "11 個會跟著呼吸變化的冥想場景，呼吸引導、靜心計時、白噪音與入睡模式。",
   "lang": "zh-Hant",
   "start_url": "./",
   "scope": "./",

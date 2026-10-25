@@ -376,7 +376,7 @@ function plantTree() {
 function fitCamera() {
   const b = tree.box, size = b.getSize(new THREE.Vector3()), c = b.getCenter(new THREE.Vector3());
   // aim low so the tree sits in the upper part of the screen, clear of the bottom controls
-  const target = new THREE.Vector3(c.x * 0.6, c.y * 0.42, c.z * 0.6);
+  const target = new THREE.Vector3(c.x * 0.6, c.y * 0.3, c.z * 0.6);
   const span = Math.max(size.x, size.z, 7.5) * 1.15;
   const vfov = THREE.MathUtils.degToRad(camera.fov);
   const distV = (b.max.y - target.y) * 1.1 / Math.tan(vfov / 2);
