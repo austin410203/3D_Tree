@@ -1,0 +1,22 @@
+{
+  "appId": "com.austin410203.seasontree",
+  "appName": "四季之樹",
+  "webDir": "www",
+  "backgroundColor": "#f7dce8",
+  "android": {
+    "backgroundColor": "#f7dce8"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 900,
+      "launchAutoHide": true,
+      "backgroundColor": "#f7dce8",
+      "androidScaleType": "CENTER_INSIDE",
+      "showSpinner": false
+    },
+    "LocalNotifications": {
+      "smallIcon": "ic_stat_leaf",
+      "iconColor": "#6a5a8a"
+    }
+  }
+}

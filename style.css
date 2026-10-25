@@ -116,6 +116,7 @@ body.night .chips button.on { color: #1b2040; }
 .row { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 0; font-size: 14px; border-top: 1px solid rgba(127, 127, 140, .15); }
 .row input[type=range] { flex: 1; max-width: 260px; }
 input[type=range] { accent-color: var(--accent); }
+input[type=time] { font: inherit; color: inherit; background: rgba(127, 127, 140, .1); border: 0; border-radius: 10px; padding: 6px 10px; }
 input[type=checkbox] { width: 20px; height: 20px; accent-color: var(--accent); }
 .list { display: grid; gap: 8px; margin: 6px 0 12px; }
 .list button { text-align: left; padding: 12px 14px; border-radius: 14px; background: rgba(127, 127, 140, .08); border: 1.5px solid transparent; }

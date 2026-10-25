@@ -16,8 +16,8 @@
 <link rel="stylesheet" href="style.css">
 <script type="importmap">
 { "imports": {
-  "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
-  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+  "three": "./vendor/three/three.module.js",
+  "three/addons/": "./vendor/three/addons/"
 } }
 </script>
 </head>
@@ -88,7 +88,7 @@
   <div class="list" id="patterns"></div>
   <label class="row switch">階段提示音<input id="cue" type="checkbox" checked></label>
   <label class="row switch">頌缽開場與結束<input id="bowl" type="checkbox" checked></label>
-  <label class="row switch">震動提示（Android）<input id="haptic" type="checkbox"></label>
+  <label class="row switch">震動提示<input id="haptic" type="checkbox"></label>
 </section>
 
 <section class="sheet" id="sheet-scene">
@@ -106,6 +106,10 @@
   <header><h2>紀錄</h2><button class="close" aria-label="關閉">✕</button></header>
   <div class="stats" id="stats"></div>
   <div class="week" id="statsWeek"></div>
+  <div id="remindBox" hidden>
+    <label class="row switch">每日提醒<input id="remind" type="checkbox"></label>
+    <label class="row">提醒時間<input id="remindTime" type="time" value="21:30"></label>
+  </div>
 </section>
 
 <script type="module" src="app.js"></script>

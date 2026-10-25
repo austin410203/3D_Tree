@@ -1,0 +1,31 @@
+# 四季之樹・靜心 Season Tree
+
+A three.js four-season tree for breathing and relaxation: breathing guide, meditation timer, procedurally synthesised ambience and white noise, day/night, records.
+
+- **Web / PWA**: a static site served from the repo root (no build step), deployable straight to Vercel.
+- **Android**: packaged with Capacitor 8 (`android/`). Native features: background sound playback (foreground service), haptics, a daily reminder notification, keeping the screen on during a session, and full offline use.
+
+The web version's first release (v1) is kept as the `v1.0-web` tag / `web-v1` branch.
+
+## Files
+
+| File | Contents |
+|---|---|
+| `tree.js` | three.js scene, exports the `world` API (breathing, season, night, falling leaves…) |
+| `audio.js` | Web Audio engine: 10 synthesised sounds, presets, singing bowl / cue chimes, background pre-scheduling |
+| `app.js` | UI, meditation flow, settings and records (localStorage) |
+| `native.js` | Capacitor plugin bridge; every call falls back to a web API on the web |
+| `vendor/three/` | three@0.170.0 (local, works offline) |
+
+## Building the Android APK
+
+Requires Node 18+, JDK 21 and the Android SDK (platform 36).
+
+```bash
+npm install
+npm run sync            # copy the web app into www/ and sync it into android/
+cd android && ./gradlew assembleDebug
+```
+
+The APK is at `android/app/build/outputs/apk/debug/app-debug.apk`.
+Icons and the splash screen are regenerated with `python scripts/make_icons.py`.

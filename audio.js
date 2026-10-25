@@ -2,6 +2,8 @@
 // works offline and carries no audio files or licences.
 
 const NOISE_SECONDS = 8;
+const FG_LOOKAHEAD = 0.25;
+const BG_LOOKAHEAD = 75;
 
 function noiseBuffer(ctx, kind) {
   const len = ctx.sampleRate * NOISE_SECONDS;
@@ -67,7 +69,7 @@ export const TRACKS = [
     let next = 0;
     return { tick(now) { // individual drops on leaves and the roof
       if (next < now) next = now;
-      while (next < now + 0.2) {
+      while (next < now + e.lookahead) {
         next += rand(0.015, 0.07);
         const s = e.ctx.createBufferSource(); s.buffer = e.buf('white');
         const f = e.ctx.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = rand(1800, 7000); f.Q.value = rand(2, 6);
@@ -93,10 +95,13 @@ export const TRACKS = [
     const bg = e.ctx.createGain(); bg.gain.value = 0.3;
     base.connect(bl).connect(bg).connect(out);
     return { tick(now) { // babbling: band centres wander quickly
-      for (const b of bands) if (b.next < now + 0.1) {
-        b.next = Math.max(b.next, now) + rand(0.06, 0.22);
-        b.f.frequency.setTargetAtTime(rand(380, 2600), b.next, 0.05);
-        b.g.gain.setTargetAtTime(rand(0.08, 0.45), b.next, 0.05);
+      for (const b of bands) {
+        if (b.next < now) b.next = now;
+        while (b.next < now + e.lookahead) {
+          b.next += rand(0.06, 0.22);
+          b.f.frequency.setTargetAtTime(rand(380, 2600), b.next, 0.05);
+          b.g.gain.setTargetAtTime(rand(0.08, 0.45), b.next, 0.05);
+        }
       }
     } };
   } },
@@ -114,8 +119,10 @@ export const TRACKS = [
   { id: 'birds', name: '鳥鳴', icon: '🐦', build(e, out) {
     let next = 0;
     return { tick(now) {
-      if (next > now + 0.3) return;
       if (next < now) next = now + rand(0.5, 2);
+      while (next < now + e.lookahead) phrase();
+    } };
+    function phrase() {
       const t0 = next, n = Math.floor(rand(2, 7)), f0 = rand(2400, 4600), pan = rand(-0.85, 0.85);
       const p = e.ctx.createStereoPanner(); p.pan.value = pan; p.connect(out);
       let t = t0;
@@ -131,14 +138,14 @@ export const TRACKS = [
         t += d + rand(0.03, 0.12);
       }
       next = t + rand(2.5, 9);
-    } };
+    }
   } },
   { id: 'crickets', name: '蟲鳴', icon: '🦗', build(e, out) {
     const voices = [0, 1, 2].map(() => ({ f: rand(3900, 4800), pan: rand(-0.8, 0.8), next: 0, gap: rand(0.5, 0.9) }));
     return { tick(now) {
       for (const v of voices) {
         if (v.next < now) v.next = now + rand(0, 0.5);
-        while (v.next < now + 0.3) {
+        while (v.next < now + e.lookahead) {
           const o = e.ctx.createOscillator(); o.frequency.value = v.f;
           const g = e.ctx.createGain(); g.gain.value = 0;
           const p = e.ctx.createStereoPanner(); p.pan.value = v.pan;
@@ -214,6 +221,17 @@ export class SoundEngine {
     this.master = 0.8;
     this.live = {};
     this.params = { wind: 0.4, breath: 0, breathing: false, t: 0 };
+    this.lookahead = FG_LOOKAHEAD;
+    this.at = null;          // audio time automation is written for (null = now)
+    this.breathAt = null;    // optional (audioTime) => breath 0..1, lets waves follow the breath ahead of time
+    this.onTick = null;      // (audioNow, lookahead) hook for app-side scheduling
+  }
+
+  // Hidden pages get their timers throttled (down to once a minute), so in the
+  // background every track schedules ~75 s of events and automation in advance.
+  setBackground(hidden) {
+    this.lookahead = hidden ? BG_LOOKAHEAD : FG_LOOKAHEAD;
+    this.tick();
   }
 
   // must be called from a user gesture the first time (autoplay policy)
@@ -244,7 +262,11 @@ export class SoundEngine {
     s.start(0, Math.random() * NOISE_SECONDS);
     return s;
   }
-  to(param, v, tc) { param.setTargetAtTime(v, this.ctx.currentTime, tc); }
+  to(param, v, tc) {
+    const at = this.at ?? this.ctx.currentTime;
+    param.cancelScheduledValues(at); // drops automation queued while in the background
+    param.setTargetAtTime(v, at, tc);
+  }
 
   ensure(id) {
     if (this.live[id]) return this.live[id];
@@ -269,17 +291,33 @@ export class SoundEngine {
     if (!this.running) return;
     const now = this.ctx.currentTime;
     this.params.t = now;
+    const span = this.lookahead > 1 ? this.lookahead : 0;
     for (const [id, tr] of Object.entries(this.live)) {
       if (this.levels[id] <= 0) continue; // silent tracks schedule nothing
-      tr.api.update?.(this.params);
+      if (tr.api.update) {
+        for (let k = 0; k <= span; k += 0.5) {
+          this.at = span ? now + k : null;
+          this.params.t = now + k;
+          if (this.breathAt) {
+            const b = this.breathAt(now + k);
+            this.params.breathing = b != null;
+            if (b != null) this.params.breath = b;
+          }
+          tr.api.update(this.params);
+        }
+        this.at = null;
+      }
       tr.api.tick?.(now);
     }
+    this.onTick?.(now, this.lookahead);
   }
 
+  get playing() { return this.running && Object.values(this.levels).some(v => v > 0); }
+
   // singing bowl: inharmonic partials with slow beating
-  bowl(f = 196, vol = 0.5) {
-    if (!this.running) return;
-    const t = this.ctx.currentTime + 0.02;
+  bowl(f = 196, vol = 0.5, when = 0) {
+    if (!this.running) return null;
+    const t = Math.max(when, this.ctx.currentTime + 0.02), oscs = [];
     [[1, 1, 9], [2.71, 0.5, 6], [5.12, 0.22, 4], [8.0, 0.1, 2.5]].forEach(([m, a, dur]) => {
       for (const det of [-0.6, 0.6]) {
         const o = this.ctx.createOscillator(); o.frequency.value = f * m + det;
@@ -287,18 +325,21 @@ export class SoundEngine {
         g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(a * vol * 0.5, t + 0.01);
         g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
         o.connect(g).connect(this.fx); o.start(t); o.stop(t + dur + 0.1);
+        oscs.push(o);
       }
     });
+    return { at: t, cancel: () => oscs.forEach(o => { try { o.stop(); } catch { /* already ended */ } }) };
   }
 
   // soft cue at breath phase changes
-  chime(up) {
-    if (!this.running) return;
-    const t = this.ctx.currentTime + 0.01;
+  chime(up, when = 0) {
+    if (!this.running) return null;
+    const t = Math.max(when, this.ctx.currentTime + 0.01);
     const o = this.ctx.createOscillator(); o.frequency.value = up ? 528 : 396;
     const g = this.ctx.createGain();
     g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.06, t + 0.15);
     g.gain.exponentialRampToValueAtTime(0.0001, t + 2.2);
     o.connect(g).connect(this.fx); o.start(t); o.stop(t + 2.3);
+    return { at: t, cancel: () => { try { o.stop(); } catch { /* already ended */ } } };
   }
 }

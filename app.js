@@ -1,5 +1,6 @@
 import { world } from './tree.js';
 import { SoundEngine, TRACKS, PRESETS, sceneMix } from './audio.js';
+import { native } from './native.js';
 
 // ---------------------------------------------------------------- data
 const PATTERNS = [
@@ -20,6 +21,7 @@ const store = {
 const settings = store.get('seasontree.settings', {
   minutes: 5, pattern: 'natural', cue: true, bowl: true, haptic: false,
   season: 'auto', time: 'auto', wind: 0.4, fall: 1, preset: 'scene', mix: {}, master: 0.8,
+  remind: false, remindTime: '21:30',
 });
 const stats = store.get('seasontree.stats', { days: {}, sessions: 0 });
 const save = () => store.set('seasontree.settings', settings);
@@ -47,6 +49,7 @@ function applyScene(instant = false) {
   nightNow = settings.time === 'auto' ? nightFromClock() : settings.time === 'night' ? 1 : 0;
   world.setNight(nightNow, instant);
   document.body.classList.toggle('night', nightNow >= 0.5);
+  native.statusBar(nightNow >= 0.5);
   world.setWind(sess.on ? Math.min(settings.wind, 0.3) : settings.wind);
   world.setFall(settings.fall);
   updateSubtitle();
@@ -67,19 +70,68 @@ function currentMix() {
 function applySound() {
   engine.setMix(currentMix());
   syncMixer();
+  syncBackgroundAudio();
 }
+let bgAudioText = '';
+function syncBackgroundAudio() {
+  const names = TRACKS.filter(t => engine.levels[t.id] > 0).map(t => t.name);
+  const text = !engine.running || !names.length ? '' : (sess.on ? '靜心中・' : '') + names.slice(0, 3).join('・');
+  if (text === bgAudioText) return;
+  bgAudioText = text;
+  native.backgroundAudio(!!text, text);
+}
+native.onBackgroundStop(() => { settings.preset = 'off'; save(); applySound(); refreshChips(); });
+document.addEventListener('visibilitychange', () => engine.setBackground(document.hidden));
 // browsers only allow audio after a gesture: start on the first touch anywhere
 addEventListener('pointerdown', () => { if (!engine.running) { engine.start(); applySound(); } }, { capture: true });
 
 // ---------------------------------------------------------------- session
-const sess = { on: false, t: 0, total: 0, pattern: null, idx: -1, phaseT: 0, quietT: 0 };
-let wakeLock = null;
+const sess = { on: false, t: 0, total: 0, pattern: null, idx: -1, quietT: 0,
+  audioStart: 0, wallStart: 0, cuesUntil: 0, cues: [], endBowl: null };
+
+// session time in seconds; the audio clock keeps running when the page is hidden
+function sessClock() {
+  return engine.running ? engine.ctx.currentTime - sess.audioStart : (performance.now() - sess.wallStart) / 1000;
+}
+// breathing phase at session time t (null while preparing or unguided)
+function phaseAt(t) {
+  const steps = sess.pattern?.steps;
+  if (!steps || t < PREP) return null;
+  const cycle = steps.reduce((a, s) => a + s[1], 0);
+  const tt = t - PREP, n = Math.floor(tt / cycle);
+  let r = tt - n * cycle, idx = 0;
+  while (r >= steps[idx][1]) { r -= steps[idx][1]; idx++; }
+  return { idx, kind: steps[idx][0], u: r / steps[idx][1], start: t - r, len: steps[idx][1] };
+}
+function breathAt(t) {
+  const ph = phaseAt(t);
+  if (!ph) return null;
+  return ph.kind === 'in' ? ease(ph.u) : ph.kind === 'hold' ? 1 : ph.kind === 'out' ? 1 - ease(ph.u) : 0;
+}
+// chimes at every inhale/exhale up to the engine's lookahead (75 s when hidden)
+engine.onTick = (now, ahead) => {
+  if (!sess.on || !settings.cue || !sess.pattern.steps) return;
+  const tEnd = now - sess.audioStart + ahead;
+  let t = Math.max(sess.cuesUntil, PREP);
+  while (t < tEnd && (!sess.total || t < sess.total + PREP)) {
+    const ph = phaseAt(t + 1e-6);
+    if (Math.abs(ph.start - t) < 1e-3 && (ph.kind === 'in' || ph.kind === 'out')) {
+      const c = engine.chime(ph.kind === 'in', sess.audioStart + t);
+      if (c) sess.cues.push(c);
+    }
+    t = ph.start + ph.len;
+  }
+  sess.cuesUntil = t;
+  sess.cues = sess.cues.filter(c => c.at > now - 3);
+};
 
 function startSession() {
   closeSheets();
-  engine.start(); applySound();
-  Object.assign(sess, { on: true, t: 0, total: settings.minutes * 60, idx: -1, phaseT: 0, quietT: 0,
-    pattern: PATTERNS.find(p => p.id === settings.pattern) || PATTERNS[0] });
+  engine.start();
+  Object.assign(sess, { on: true, t: 0, total: settings.minutes * 60, idx: -1, quietT: 0,
+    pattern: PATTERNS.find(p => p.id === settings.pattern) || PATTERNS[0],
+    audioStart: engine.ctx.currentTime, wallStart: performance.now(), cuesUntil: 0, cues: [], endBowl: null });
+  applySound();
   $('home').classList.add('hide');
   $('session').classList.add('on');
   $('session').classList.remove('quiet');
@@ -89,22 +141,34 @@ function startSession() {
   world.setInteractive(false);
   world.setAutoRotate(0.12);
   world.setWind(Math.min(settings.wind, 0.3));
-  if (settings.bowl) engine.bowl(196, 0.55);
-  navigator.wakeLock?.request('screen').then(l => { wakeLock = l; }).catch(() => {});
+  if (settings.bowl) {
+    engine.bowl(196, 0.55);
+    if (sess.total) sess.endBowl = engine.bowl(220, 0.6, sess.audioStart + PREP + sess.total);
+  }
+  engine.breathAt = at => (sess.on ? breathAt(at - sess.audioStart) : null);
+  engine.tick();
+  native.keepAwake(true);
   updateTimer();
 }
 
 function finishSession(completed) {
   if (!sess.on) return;
   sess.on = false;
-  if (settings.bowl) engine.bowl(completed ? 220 : 196, completed ? 0.6 : 0.35);
+  const now = engine.running ? engine.ctx.currentTime : 0;
+  sess.cues.forEach(c => c.at > now && c.cancel());
+  if (!completed) {
+    sess.endBowl?.cancel();
+    if (settings.bowl) engine.bowl(196, 0.35);
+  }
+  engine.breathAt = null;
   engine.set({ breathing: false, breath: 0 });
+  syncBackgroundAudio();
   world.setBreath(0);
   world.setWind(settings.wind);
   world.setInteractive(true);
   world.setAutoRotate(0.3);
   if (completed) { world.gust(); world.dropLeaves(70, 1.6); }
-  wakeLock?.release().catch(() => {}); wakeLock = null;
+  native.keepAwake(false);
   $('session').classList.remove('on');
 
   const secs = Math.round(sess.t - Math.min(sess.t, PREP));
@@ -129,7 +193,7 @@ $('doneOk').onclick = () => { $('done').classList.remove('on'); $('home').classL
 const ease = u => 0.5 - 0.5 * Math.cos(Math.PI * Math.min(1, Math.max(0, u)));
 
 function stepSession(dt) {
-  sess.t += dt;
+  sess.t = sessClock();
   sess.quietT += dt;
   $('session').classList.toggle('quiet', sess.quietT > 4);
   updateTimer();
@@ -142,22 +206,16 @@ function stepSession(dt) {
   } else if (!steps) {
     $('breathText').textContent = '';
   } else {
-    sess.phaseT += dt;
-    if (sess.idx < 0 || sess.phaseT >= steps[sess.idx][1]) {
-      sess.phaseT = sess.idx < 0 ? 0 : sess.phaseT - steps[sess.idx][1];
-      sess.idx = (sess.idx + 1) % steps.length;
-      const kind = steps[sess.idx][0];
-      $('breathText').textContent = PHASE_LABEL[kind];
-      if (settings.cue && (kind === 'in' || kind === 'out')) engine.chime(kind === 'in');
-      if (settings.haptic) navigator.vibrate?.(kind === 'in' ? 18 : kind === 'out' ? [8, 60, 8] : 0);
-      if (kind === 'out') world.dropLeaves(5 + Math.floor(Math.random() * 6), 0.3);
+    const ph = phaseAt(sess.t);
+    if (ph.idx !== sess.idx) {
+      sess.idx = ph.idx;
+      $('breathText').textContent = PHASE_LABEL[ph.kind];
+      if (settings.haptic && ph.kind !== 'rest') native.haptic(ph.kind === 'out' ? 'double' : 'light');
+      if (ph.kind === 'out') world.dropLeaves(5 + Math.floor(Math.random() * 6), 0.3);
     }
-    const [kind, d] = steps[sess.idx];
-    const u = sess.phaseT / d;
-    b = kind === 'in' ? ease(u) : kind === 'hold' ? 1 : kind === 'out' ? 1 - ease(u) : 0;
+    b = breathAt(sess.t);
   }
   world.setBreath(b);
-  engine.set({ breath: b, breathing: !!steps && sess.t >= PREP });
   $('ring').firstElementChild.style.transform = `scale(${0.35 + 0.65 * b})`;
 }
 
@@ -264,6 +322,7 @@ for (const t of TRACKS) {
     if (settings.preset !== 'custom') { settings.mix = { ...currentMix() }; settings.preset = 'custom'; refreshChips(); }
     settings.mix[t.id] = +input.value;
     engine.setLevel(t.id, +input.value);
+    syncBackgroundAudio();
     save();
   };
   sliders[t.id] = input;
@@ -275,7 +334,7 @@ $('master').value = settings.master;
 $('master').oninput = e => { settings.master = +e.target.value; engine.setMaster(settings.master); save(); };
 for (const k of ['cue', 'bowl', 'haptic']) {
   $(k).checked = settings[k];
-  $(k).onchange = e => { settings[k] = e.target.checked; save(); if (k === 'haptic' && settings.haptic) navigator.vibrate?.(20); };
+  $(k).onchange = e => { settings[k] = e.target.checked; save(); if (k === 'haptic' && settings.haptic) native.haptic('medium'); };
 }
 $('wind').value = settings.wind;
 $('wind').oninput = e => { settings.wind = +e.target.value; world.setWind(settings.wind); save(); };
@@ -298,7 +357,7 @@ canvasHost.addEventListener('pointerup', e => {
   poke();
   if (!wasFaded) {
     world.dropLeaves(8, 0.5);
-    if (settings.haptic) navigator.vibrate?.(10);
+    if (settings.haptic) native.haptic('light');
   }
 });
 addEventListener('pointermove', () => { if (!sess.on) idleT = 0; });
@@ -326,12 +385,39 @@ let last = performance.now();
   requestAnimationFrame(raf);
 })(last);
 
+// ---------------------------------------------------------------- daily reminder (app only)
+const REMIND_LINES = ['今天也跟著樹呼吸幾分鐘吧 🍃', '樹在等你，來坐一下 🌳', '給自己五分鐘，慢慢吸氣、慢慢吐氣', '葉子落下之前，先放下肩膀 🍂'];
+if (native.canRemind) {
+  $('remindBox').hidden = false;
+  $('remind').checked = settings.remind;
+  $('remindTime').value = settings.remindTime;
+  const apply = async () => {
+    const [h, m] = settings.remindTime.split(':').map(Number);
+    const body = REMIND_LINES[Math.floor(Math.random() * REMIND_LINES.length)];
+    const ok = await native.setReminder(settings.remind, h, m, body);
+    if (!ok && settings.remind) { settings.remind = false; $('remind').checked = false; }
+    save();
+  };
+  $('remind').onchange = e => { settings.remind = e.target.checked; apply(); };
+  $('remindTime').onchange = e => { settings.remindTime = e.target.value || '21:30'; if (settings.remind) apply(); else save(); };
+}
+
+native.onBack(() => {
+  if (document.querySelector('.sheet.on')) { closeSheets(); return true; }
+  if (sess.on) { finishSession(false); return true; }
+  if ($('done').classList.contains('on')) { $('doneOk').click(); return true; }
+  return false;
+});
+
 // ---------------------------------------------------------------- boot
 refreshChips();
 applyScene(true);
 world.setAutoRotate(0.3);
 
-if ('serviceWorker' in navigator && location.protocol === 'https:') {
+// the Android status bar overlays the page and WebView may report no safe-area inset
+if (native.isNative) document.documentElement.style.setProperty('--sat', 'max(env(safe-area-inset-top, 0px), 26px)');
+requestAnimationFrame(() => native.hideSplash());
+if ('serviceWorker' in navigator && location.protocol === 'https:' && !native.isNative) {
   navigator.serviceWorker.register('sw.js').catch(() => {});
 }
 

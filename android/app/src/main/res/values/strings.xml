@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">四季之樹</string>
+    <string name="title_activity_main">四季之樹</string>
+    <string name="package_name">com.austin410203.seasontree</string>
+    <string name="custom_url_scheme">com.austin410203.seasontree</string>
+</resources>
