@@ -1,0 +1,13 @@
+.git
+.gitignore
+.vercelignore
+.assetsignore
+wrangler.jsonc
+android
+scripts
+dist
+www
+node_modules
+capacitor.config.json
+package.json
+package-lock.json
