@@ -24,7 +24,7 @@ const hemi = new THREE.HemisphereLight('#3a4a78', '#1a1410', 0.55);
 scene.add(hemi);
 
 // ---------------------------------------------------------------- ground
-const grassMat = new THREE.MeshLambertMaterial({ color: '#2f3d2c' });
+const grassMat = new THREE.MeshLambertMaterial({ color: '#3a3128' }); // warm earth: green grass looked green-tinted in the firelight
 const ground = new THREE.Mesh(new THREE.CircleGeometry(80, 64).rotateX(-Math.PI / 2), grassMat);
 ground.receiveShadow = true;
 scene.add(ground);

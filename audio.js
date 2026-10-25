@@ -339,6 +339,33 @@ export const TRACKS = [
       }
     } };
   } },
+  { id: 'templebell', name: '寺鐘', icon: '🔔', build(e, out) {
+    // a far-off temple bell: low inharmonic partials, very long decay, a valley echo
+    const dl = e.ctx.createDelay(3); dl.delayTime.value = 1.8;
+    const fb = e.ctx.createGain(); fb.gain.value = 0.3;
+    const lpE = e.ctx.createBiquadFilter(); lpE.type = 'lowpass'; lpE.frequency.value = 600;
+    dl.connect(lpE).connect(fb).connect(dl);
+    lpE.connect(out);
+    let next = 0;
+    return { tick(now) {
+      if (next < now) next = now + rand(2, 8);
+      while (next < now + e.lookahead) {
+        const t = next, f = rand(98, 130);
+        const bus = e.ctx.createGain(); bus.gain.value = 0.5;
+        bus.connect(out); bus.connect(dl);
+        for (const [m, a, dur] of [[1, 0.5, 12], [2.0, 0.22, 9], [2.76, 0.16, 7], [4.1, 0.08, 4], [5.4, 0.04, 2.5]]) {
+          for (const det of [-0.4, 0.4]) {
+            const o = e.ctx.createOscillator(); o.frequency.value = f * m + det;
+            const g = e.ctx.createGain();
+            g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(a * 0.5, t + 0.02);
+            g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+            o.connect(g).connect(bus); o.start(t); o.stop(t + dur + 0.1);
+          }
+        }
+        next = t + rand(28, 55);
+      }
+    } };
+  } },
   { id: 'drone', name: '冥想音墊', icon: '🎐', build(e, out) {
     const lp = e.ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 900;
     const g = e.ctx.createGain(); g.gain.value = 0.5;
