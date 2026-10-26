@@ -1,5 +1,11 @@
 // Calm Moments worker: serves the static site and checks 完整版 licence keys.
 // Static files never reach this code (assets.run_worker_first only routes /api/* here).
+// the Android app (https://localhost) and iOS app (capacitor://localhost) call the licence API cross-origin
+const APP_ORIGINS = ['https://localhost', 'capacitor://localhost'];
+const cors = (req) => {
+  const o = req.headers.get('origin');
+  return APP_ORIGINS.includes(o) ? { 'access-control-allow-origin': o, 'access-control-allow-methods': 'POST, OPTIONS', 'access-control-allow-headers': 'content-type', vary: 'origin' } : {};
+};
 const json = (data, status = 200) => new Response(JSON.stringify(data), {
   status, headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' },
 });
@@ -40,7 +46,14 @@ async function license(action, req, env) {
 export default {
   async fetch(req, env) {
     const url = new URL(req.url);
-    if (url.pathname.startsWith('/api/license/') && req.method === 'POST') return license(url.pathname.slice(13), req, env);
+    if (url.pathname.startsWith('/api/license/')) {
+      if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors(req) });
+      if (req.method === 'POST') {
+        const res = await license(url.pathname.slice(13), req, env);
+        for (const [k, v] of Object.entries(cors(req))) res.headers.set(k, v);
+        return res;
+      }
+    }
     if (url.pathname.startsWith('/api/')) return json({ error: 'not found' }, 404);
     return env.ASSETS.fetch(req);
   },

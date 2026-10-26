@@ -583,7 +583,8 @@ function renderFull(msg = '') {
 }
 $('fullBody').addEventListener('click', async e => {
   if (e.target.closest('#fullBuy')) {
-    if (PASS.checkoutUrl) window.open(PASS.checkoutUrl, '_blank', 'noopener');
+    // in the app, leaving the page for another site hands the link to the phone's browser
+    if (PASS.checkoutUrl) native.isNative ? (location.href = PASS.checkoutUrl) : window.open(PASS.checkoutUrl, '_blank', 'noopener');
     else $('fullMsg').textContent = t('full.soon');
     return;
   }
@@ -602,9 +603,6 @@ $('fullBody').addEventListener('click', async e => {
 });
 $('fullBody').addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.id === 'fullKey') $('fullGo').click(); });
 if (paywallOn) recheck();
-
-// store rules: the pricing page (which mentions web checkout) is shown on the web only
-if (native.isNative) document.querySelectorAll('[data-web-only]').forEach(el => el.remove());
 
 addEventListener('error', e => {
   const el = e.target;

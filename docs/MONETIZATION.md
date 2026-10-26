@@ -21,4 +21,4 @@
 - [x] 方案頁 `scripts/legal_gen.py` 的 C["pass"] 改成免費 vs 完整版對照表，再重新產生。
 - [ ] 用 `?lstest` 開網頁，以 Lemon Squeezy 測試卡實際買一次並啟用。
 - [ ] Lemon Squeezy 從測試模式切到正式模式（老闆操作），之後把 store.js 的 `LIVE` 改 true、wrangler 的 `LS_LIVE` 改 "1"。
-- [ ] Android 版改用 Google Play 內購，App 內不顯示網頁結帳（目前原生 App 的 paywallOn = false，全部場景開放）。
+- [ ] 上架 Google Play 前：Android 版改用 Play 內購，移除 App 內的網頁結帳與序號輸入（目前 0.7.1 起 App 也上鎖，可輸入網頁序號，Worker 允許 https://localhost 的 CORS）。

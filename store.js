@@ -1,7 +1,7 @@
 // Free vs 完整版 (full version). Free: four scenes plus every sound, breathing pattern and sleep mode.
 // On the web the full version is a Lemon Squeezy licence key checked by the worker (/api/license/*).
-// The Android/iOS apps must sell through Google Play / App Store billing and may not offer web keys,
-// so the paywall stays off inside the native app until store billing is added (docs/MONETIZATION.md).
+// For now the Android app takes the same web keys (sideloaded test builds only). Before the app goes on
+// Google Play / the App Store it must switch to store billing and drop web checkout (docs/MONETIZATION.md).
 import { isNative } from './native.js';
 
 // Lemon Squeezy checkout. While the store is in test mode the button only works with ?lstest in the address,
@@ -10,18 +10,19 @@ const LIVE = false;
 const CHECKOUT = 'https://emptyofficex.lemonsqueezy.com/checkout/buy/c8ce6018-0b8b-469e-9c32-5215b1b7d7b5';
 const testing = (() => { try { return new URLSearchParams(location.search).has('lstest'); } catch { return false; } })();
 export const PASS = {
-  checkoutUrl: LIVE || testing ? CHECKOUT : '', // empty: the buy button says 「即將開放」
+  checkoutUrl: LIVE || testing || isNative ? CHECKOUT : '', // empty: the buy button says 「即將開放」
   price: 'NT$30',
 };
 export const FREE_SCENES = ['tree', 'sea', 'rain', 'candle'];
 
 const KEY = 'seasontree.pass';
-const API = '/api/license/';
+// the app is served from https://localhost, so it calls the site's worker by its full address (CORS allowed there)
+const API = (isNative ? 'https://calm.emptyoffice.app' : '') + '/api/license/';
 const RECHECK = 7 * 86400e3;
 const read = () => { try { return JSON.parse(localStorage.getItem(KEY) || 'null'); } catch { return null; } };
 const write = (v) => { try { v ? localStorage.setItem(KEY, JSON.stringify(v)) : localStorage.removeItem(KEY); } catch { /* storage blocked */ } };
 
-export const paywallOn = !isNative;
+export const paywallOn = true;
 
 let pass = read();
 export const hasPass = () => !paywallOn || !!(pass && pass.ok);
@@ -34,7 +35,7 @@ async function call(path, body) {
   if (!r.ok) throw new Error(j.error || String(r.status));
   return j;
 }
-const deviceName = () => `web ${navigator.platform || ''} ${new Date().toISOString().slice(0, 10)}`.trim();
+const deviceName = () => `${isNative ? 'app' : 'web'} ${navigator.platform || ''} ${new Date().toISOString().slice(0, 10)}`.trim();
 
 // activate a licence key on this browser; resolves true or throws with a reason ('invalid', 'limit', …)
 export async function activate(key) {

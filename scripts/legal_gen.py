@@ -37,7 +37,7 @@ C["pass"] = {
 <li>付款後，收據頁和 email 都會顯示一組<b>序號</b>。</li>
 <li>回到靜心時光，在完整版頁面輸入序號並按「啟用」，就會立即解鎖。</li></ol>
 <p>同一組序號最多可在 <b>5 個裝置或瀏覽器</b>啟用。清除瀏覽器資料後，重新輸入同一組序號即可。</p>
-<p class="note">網頁版的訂單由我們的線上經銷商 Lemon Squeezy 處理，Lemon Squeezy 是交易的登記賣方（Merchant of Record），負責收款、開立收據與稅務。App 版（Android／iOS）的購買方式會在上架商店時公告，網頁序號不能在 App 內使用。</p>
+<p class="note">網頁版的訂單由我們的線上經銷商 Lemon Squeezy 處理，Lemon Squeezy 是交易的登記賣方（Merchant of Record），負責收款、開立收據與稅務。目前 Android 測試版也能輸入同一組序號解鎖；App 正式上架 Google Play／App Store 後，會改用商店的 App 內購買。</p>
 """,
 "ja": """
 <p class="lead">無料で使えるもの：<b>四季の木・海辺の潮騒・雨の窓・キャンドルの 4 シーン</b>と、すべてのサウンド、呼吸ガイド、おやすみモード。「完全版」を一度購入すると、13 シーンすべてと今後追加されるシーンが解放されます。</p>
@@ -55,7 +55,7 @@ C["pass"] = {
 <li>領収ページとメールに<b>ライセンスキー</b>が表示されます。</li>
 <li>やすらぎの時間の完全版画面にキーを入力して「有効化」を押すと、すぐに解放されます。</li></ol>
 <p>1 つのキーで最大 <b>5 台の端末・ブラウザ</b>まで有効化できます。ブラウザのデータを消去した場合は、同じキーを再入力してください。</p>
-<p class="note">Web 版のご注文は当社のオンライン販売代理店 Lemon Squeezy が処理します。Lemon Squeezy は販売者（Merchant of Record）として決済・領収書・税務を担当します。アプリ版（Android／iOS）の購入方法はストア公開時にお知らせします。Web 版のキーはアプリ内では使えません。</p>
+<p class="note">Web 版のご注文は当社のオンライン販売代理店 Lemon Squeezy が処理します。Lemon Squeezy は販売者（Merchant of Record）として決済・領収書・税務を担当します。現在の Android テスト版でも同じキーで解放できます。アプリが Google Play／App Store で正式公開された後は、ストアのアプリ内課金に切り替わります。</p>
 """,
 "en": """
 <p class="lead">Free to use: <b>four scenes — Season Tree, Seaside Tide, Rainy Window and Candlelight</b> — plus every sound, the breathing guide and sleep mode. Buy the Full Version once to unlock all 13 scenes and every future scene.</p>
@@ -73,7 +73,7 @@ C["pass"] = {
 <li>Your <b>licence key</b> appears on the receipt page and in the email.</li>
 <li>Back in Calm Moments, enter the key on the Full Version page and press "Activate" — it unlocks right away.</li></ol>
 <p>One key works on up to <b>5 devices or browsers</b>. If you clear your browser data, just enter the same key again.</p>
-<p class="note">Our order process is conducted by our online reseller Lemon Squeezy, the Merchant of Record for all web orders. They handle payment, receipts and sales tax. How to buy in the Android/iOS apps will be announced when they reach the stores; web licence keys cannot be used inside the apps.</p>
+<p class="note">Our order process is conducted by our online reseller Lemon Squeezy, the Merchant of Record for all web orders. They handle payment, receipts and sales tax. The current Android test build also accepts the same key; once the apps are released on Google Play / the App Store, they will use store in-app purchases instead.</p>
 """,
 "ko": """
 <p class="lead">무료로 쓸 수 있는 것: <b>사계절 나무·바닷가 파도·비 오는 창가·촛불 4개 장면</b>과 모든 소리, 호흡 가이드, 수면 모드. 「완전판」을 한 번 구매하면 13개 장면 전부와 앞으로 나올 새 장면이 열립니다.</p>
@@ -91,7 +91,7 @@ C["pass"] = {
 <li>영수증 페이지와 이메일에 <b>라이선스 키</b>가 표시됩니다.</li>
 <li>고요한 시간의 완전판 화면에 키를 입력하고 「활성화」를 누르면 바로 열립니다.</li></ol>
 <p>키 하나로 최대 <b>5대의 기기·브라우저</b>에서 활성화할 수 있습니다. 브라우저 데이터를 지운 경우 같은 키를 다시 입력하세요.</p>
-<p class="note">웹 주문은 온라인 리셀러 Lemon Squeezy가 처리하며, Lemon Squeezy가 판매자(Merchant of Record)로서 결제·영수증·세금을 담당합니다. Android/iOS 앱의 구매 방법은 스토어 출시 때 안내하며, 웹 라이선스 키는 앱에서 사용할 수 없습니다.</p>
+<p class="note">웹 주문은 온라인 리셀러 Lemon Squeezy가 처리하며, Lemon Squeezy가 판매자(Merchant of Record)로서 결제·영수증·세금을 담당합니다. 현재 Android 테스트 버전에서도 같은 키로 열 수 있습니다. 앱이 Google Play/App Store에 정식 출시된 후에는 스토어 인앱 결제로 바뀝니다.</p>
 """,
 }
 
