@@ -16,10 +16,18 @@
 - [x] 圖示 1024、啟動畫面（scripts/make_icons.py）
 
 ## 商店素材（已完成）
-- [x] 截圖 6.9 吋 × 6 張 × 4 語系：`store/screenshots/iphone-6.9/<lang>/`（`python store/make_shots.py` 重拍）
+- [x] 截圖 × 6 張 × 4 語系：App Store 現在**必填 6.1／6.3 吋（1206×2622）**，6.9 吋改選填 → 上傳 `store/screenshots/iphone-6.3/<lang>/`（由 6.9 吋縮小）；`python store/make_shots.py` 重拍
 - [x] 文案：`store/metadata/{zh-Hant,en-US,ja,ko}.md`
 - [x] 審查說明：`store/review-notes.md`
 - [x] 圖示：`store/icon-1024.png`
+
+## App Store Connect（2026-10-27 Claude 已完成）
+- [x] Bundle ID `com.austin410203.seasontree` 註冊（Team M3FNV67WZ3）
+- [x] App 記錄 Apple ID 6827235005；名稱：繁中「靜心時光：呼吸冥想」、英「Calm Moments: Breathe & Sleep」、日「やすらぎの時間：呼吸と瞑想」、韓「고요한 시간: 호흡과 명상」＋四語副標題
+- [x] 類別：健康與健身／生活風格
+- [x] 內購 Apple ID 6827240204：非消耗型、台灣基準 NT$30（美國 US$0.99）、175 國、四語名稱與說明、審查截圖 `store/iap-review.png`、審查備註（尚未「提交審查」）
+- [x] 版本 1.0：四語宣傳文字、描述、關鍵字、支援／行銷網址、版權「2026 Empty Office」、手動發布、四語各 6 張截圖
+- 注意：ASC 新增多個語言時要一次存一個，否則會誤報「名稱已被使用」
 
 ## 要老闆在 Apple 網站操作
 - [ ] App Store Connect → 使用者與存取權限 → 整合 → App Store Connect API → 產生金鑰（角色「App 管理」），記下 Issuer ID、Key ID，下載 .p8

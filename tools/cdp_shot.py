@@ -88,6 +88,8 @@ try:
             w, h, dpr = st['emulate']
             ws.send('Emulation.setDeviceMetricsOverride', {'width': w, 'height': h, 'deviceScaleFactor': dpr, 'mobile': True})
             ws.send('Emulation.setTouchEmulationEnabled', {'enabled': True, 'maxTouchPoints': 5})
+        if 'inject' in st:  # script run before every page load (e.g. a fake window.Capacitor)
+            ws.send('Page.addScriptToEvaluateOnNewDocument', {'source': st['inject']})
         if 'goto' in st:  # reload the page (e.g. after seeding localStorage)
             ws.send('Page.navigate', {'url': url + st['goto']})
         if 'eval' in st:

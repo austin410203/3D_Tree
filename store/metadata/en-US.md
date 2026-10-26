@@ -7,7 +7,7 @@ Calm Moments: Breathe & Sleep
 Breathing scenes, white noise
 
 ## Promotional text (max 170)
-13 hand-crafted scenes that move with your breath: a seasonal tree, the sea, a rainy window, the aurora, a spirit deer… Breathe along, or turn the screen off and drift to sleep.
+13 hand-crafted scenes that move with your breath: a seasonal tree, the sea, rain, the aurora, a spirit deer… Breathe along, or turn the screen off and drift to sleep.
 
 ## Description (max 4000)
 Calm Moments is a quiet app for meditation and sleep. The scene moves with your breath: as you inhale the tree lifts, the aurora brightens and the campfire grows; as you exhale everything settles. No account needed — just open it and begin.
@@ -40,7 +40,7 @@ The Full Version is a one-time purchase that unlocks the other 9 scenes and ever
 This app is for relaxation only and is not a substitute for professional medical or mental-health advice.
 
 ## Keywords (max 100, comma-separated, no spaces)
-meditation,breathing,sleep,white noise,relax,calm,mindfulness,rain sounds,anxiety,focus,ambient,4-7-8
+meditation,breathing,sleep,white noise,relax,calm,mindfulness,rain sounds,anxiety,focus,ambient
 
 ## What's new
 First release.
