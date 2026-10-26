@@ -31,10 +31,11 @@ LOG & REMINDERS
 Streaks, total time, a weekly view and a daily reminder at the time you choose.
 
 PRIVACY
-No sign-up, no ads, no tracking. Your practice log stays on your phone.
+No sign-up. Your practice log stays on your phone, and an ad only appears when you choose to watch one.
 
 FREE & FULL VERSION
-Four scenes, every sound, the breathing guide, sleep mode and the log are free. The Full Version is a one-time purchase that unlocks the other 9 scenes and every future scene. No subscription.
+Four scenes, every sound, the breathing guide, sleep mode and the log are free. Curious about another scene? Watch one ad to try it free for a day (up to 5 a day).
+The Full Version is a one-time purchase that unlocks the other 9 scenes and every future scene, with no ads ever. No subscription.
 
 This app is for relaxation only and is not a substitute for professional medical or mental-health advice.
 
@@ -51,4 +52,4 @@ First release.
 
 ## In-app purchase
 - Display name: Full Version
-- Description: Unlock all 13 scenes and future scenes
+- Description: Unlock all 13 scenes and future scenes, no ads ever

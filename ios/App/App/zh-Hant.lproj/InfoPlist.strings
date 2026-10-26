@@ -1,3 +1,5 @@
 /* 主畫面上的 App 名稱 */
 "CFBundleDisplayName" = "靜心時光";
 "CFBundleName" = "靜心時光";
+/* App 追蹤授權（ATT）說明，只在使用者第一次要看廣告時詢問 */
+"NSUserTrackingUsageDescription" = "允許後，免費版的廣告會更符合你的興趣；不允許也能照常使用。";

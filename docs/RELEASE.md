@@ -27,9 +27,18 @@
 - [ ] App Store Connect →「我的 App」→ 新增 App：iOS、名稱「靜心時光：呼吸冥想」、主要語言繁體中文、Bundle ID `com.austin410203.seasontree`、SKU `seasontree`
 - [ ] 協議、稅務和銀行業務：付費 App 協議、W-8BEN、銀行帳戶；申請 Small Business Program（抽成 15%）
 - [ ] App 內購買項目：非消耗型 `com.austin410203.seasontree.full`、NT$30、四語系名稱與描述（見 metadata）、審查截圖用 `store/screenshots/iphone-6.9/zh/4-sleep.png` 以外的一張完整版頁畫面
-- [ ] App 隱私：「不收集資料」
-- [ ] 年齡分級問卷：全部選「無」→ 4+
+- [ ] App 隱私（因為有 AdMob 獎勵廣告，依 Google 的「AdMob 的 App Store 資料揭露」說明填寫，送審前再到 Google 官方頁確認一次）：
+  - 收集的資料：裝置 ID、產品互動、廣告資料、當機資料、效能資料、其他診斷資料、大略位置
+  - 用途：第三方廣告、分析
+  - 「用來追蹤你」：勾選裝置 ID 與廣告資料（使用者在 ATT 允許追蹤時會用於個人化廣告）
+  - 我們自己（練習紀錄、設定）不收集任何資料
+- [ ] 年齡分級問卷：內容全部選「無」；「廣告」照實勾選有（只有獎勵廣告，內容分級上限 G）→ 預期 4+
 - [ ] 類別：健康與健身（主）、生活風格（副）
+
+## 廣告（AdMob，見 MONETIZATION.md）
+- [ ] 老闆：AdMob 建立 iOS／Android 應用程式與獎勵廣告單元，交給 Claude App ID、廣告單元 ID、app-ads.txt 那一行
+- [ ] Claude：換成正式 ID、部署 https://emptyoffice.app/app-ads.txt
+- [ ] 商店頁「開發者網站」填 https://emptyoffice.app
 
 ## 發布
 - [ ] GitHub Actions 模擬器編譯通過

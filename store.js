@@ -57,9 +57,22 @@ export async function iapRestore() {
 // purchases made elsewhere (family approval, refunds, another device) reload the page so locks update
 Store?.addListener('entitlementsChanged', e => { if (setOwned(e.productIds)) location.reload(); });
 
+// ---- ad-earned trials: one rewarded ad opens a locked scene for 24 hours (ads.js)
+const TRIAL_KEY = 'seasontree.trials';
+export const TRIAL_MS = 24 * 3600e3;
+const readTrials = () => { try { return JSON.parse(localStorage.getItem(TRIAL_KEY) || '{}'); } catch { return {}; } };
+// end of the scene's trial (ms) while it runs, else 0
+export const trialUntil = (id) => { const u = readTrials()[id] || 0; return u > Date.now() ? u : 0; };
+export function startTrial(id) {
+  const now = Date.now(), tr = readTrials();
+  for (const k of Object.keys(tr)) if (tr[k] <= now) delete tr[k];
+  tr[id] = now + TRIAL_MS;
+  try { localStorage.setItem(TRIAL_KEY, JSON.stringify(tr)); } catch { /* storage blocked */ }
+}
+
 let pass = read();
 export const hasPass = () => !paywallOn || (usesAppStore ? iapOwned : !!(pass && pass.ok));
-export const isSceneLocked = (id) => !hasPass() && !FREE_SCENES.includes(id);
+export const isSceneLocked = (id) => !hasPass() && !FREE_SCENES.includes(id) && !trialUntil(id);
 export const passInfo = () => (usesAppStore ? (iapOwned ? { store: true } : null)
   : pass && pass.ok ? { key: pass.key.slice(0, 8) + '…', since: pass.since } : null);
 

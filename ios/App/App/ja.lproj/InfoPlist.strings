@@ -1,3 +1,5 @@
 /* 主畫面上的 App 名稱 */
 "CFBundleDisplayName" = "やすらぎの時間";
 "CFBundleName" = "やすらぎの時間";
+/* App 追蹤授權（ATT）說明，只在使用者第一次要看廣告時詢問 */
+"NSUserTrackingUsageDescription" = "許可すると、無料版の広告があなたの興味に合ったものになります。許可しなくてもそのまま使えます。";

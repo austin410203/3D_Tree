@@ -1,7 +1,8 @@
 import { world, SCENES } from './core.js';
 import { SoundEngine, TRACKS, PRESETS } from './audio.js';
 import { native } from './native.js';
-import { PASS, FREE_SCENES, paywallOn, isSceneLocked, passInfo, activate, recheck, usesAppStore, iapPrice, iapBuy, iapRestore } from './store.js';
+import { PASS, FREE_SCENES, paywallOn, isSceneLocked, passInfo, activate, recheck, usesAppStore, iapPrice, iapBuy, iapRestore, trialUntil, startTrial } from './store.js';
+import { showRewarded, adsLeftToday, showAdPrivacy } from './ads.js';
 import { t, setLang, detectLang, LANGS, applyStatic, getLang } from './i18n.js';
 
 // ---------------------------------------------------------------- data
@@ -73,15 +74,20 @@ function updateSubtitle() {
 const sceneText = id => t(`scene.${id}`);
 // scene switch: sheet controls, subtitle and the "跟著場景" sound all follow it
 world.onScene = () => { applyScene(true); refreshChips(); };
+let fullFor = null; // the locked scene that opened the 完整版 sheet (offered as a one-day ad trial)
 async function pickScene(id) {
-  if (isSceneLocked(id)) { openSheet('full'); return; }
+  if (isSceneLocked(id)) { fullFor = id; openSheet('full'); return; }
   settings.scene = id;
   if (settings.preset !== 'off') settings.preset = 'scene';
   save();
   await world.setScene(id);
 }
 world.onSeason = () => { updateSubtitle(); if (settings.preset === 'scene') applySound(); refreshChips(); };
-setInterval(() => { if (settings.time === 'auto' || settings.season === 'auto') applyScene(); }, 60000);
+setInterval(() => {
+  if (settings.time === 'auto' || settings.season === 'auto') applyScene();
+  // a one-day ad trial ran out while the scene was on screen: go back to a free scene
+  if (isSceneLocked(world.scene)) pickScene(FREE_SCENES[0]);
+}, 60000);
 
 // ---------------------------------------------------------------- sound
 function currentMix() {
@@ -376,7 +382,7 @@ function closeSheets() {
   document.querySelectorAll('.sheet.on').forEach(s => s.classList.remove('on'));
   $('scrim').classList.remove('on');
 }
-document.querySelectorAll('[data-sheet]').forEach(b => b.onclick = () => openSheet(b.dataset.sheet));
+document.querySelectorAll('[data-sheet]').forEach(b => b.onclick = () => { fullFor = null; openSheet(b.dataset.sheet); });
 document.querySelectorAll('.sheet .close').forEach(b => b.onclick = closeSheets);
 $('scrim').onclick = closeSheets;
 
@@ -411,11 +417,17 @@ function refreshChips() {
     const [sn, sd] = sceneText(sc.id);
     b.innerHTML = `<img class="ico" src="icons/ui/scene-${sc.id}.png" alt="" data-fallback="${sc.icon}"><b>${sn}</b><small>${sd}</small>`;
     b.classList.toggle('on', sc.id === world.scene);
+    const trial = trialUntil(sc.id);
     if (isSceneLocked(sc.id)) {
       b.classList.add('locked');
       b.insertAdjacentHTML('beforeend', `<i class="lock">🔒 ${t('full.locked')}</i>`);
-      b.onclick = () => openSheet('full');
-    } else b.onclick = () => { pickScene(sc.id); closeSheets(); };
+      b.onclick = () => { fullFor = sc.id; openSheet('full'); };
+    } else {
+      if (trial && !FREE_SCENES.includes(sc.id) && !passInfo()) {
+        b.insertAdjacentHTML('beforeend', `<i class="lock trial">⏳ ${t('ad.trialLeft', Math.max(1, Math.ceil((trial - Date.now()) / 3600e3)))}</i>`);
+      }
+      b.onclick = () => { pickScene(sc.id); closeSheets(); };
+    }
     $('sceneList').appendChild(b);
   }
   const info = world.info;
@@ -573,9 +585,17 @@ function renderFull(msg = '') {
   const perks = [
     ['✨', t('full.perkScenes', paid.length), paid.map(sc => sceneText(sc.id)[0]).join('・')],
     ['🌱', t('full.perkFuture'), t('full.perkFutureD')],
+    ['🌙', t('full.perkNoAds'), t('full.perkNoAdsD')],
     ['🎧', t('full.perkFree'), t('full.perkFreeD')],
   ];
-  const perkHtml = `<div class="full-perks">${perks.map(([i, h, p]) => `<div><i>${i}</i><b>${h}</b><span>${p}</span></div>`).join('')}</div>`;
+  // opened from a locked scene: offer that scene free for a day in exchange for one rewarded ad
+  const left = adsLeftToday();
+  const trialHtml = fullFor && isSceneLocked(fullFor) ? `<div class="full-trial">
+      <b>${t('ad.trialTitle', sceneText(fullFor)[0])}</b>
+      <button id="fullAd" class="full-ad"${left ? '' : ' disabled'}>${left ? t('ad.watch') : t('ad.limit')}</button>
+      ${left ? `<small>${t('ad.left', left)}</small>` : ''}
+    </div>` : '';
+  const perkHtml = `${trialHtml}<div class="full-perks">${perks.map(([i, h, p]) => `<div><i>${i}</i><b>${h}</b><span>${p}</span></div>`).join('')}</div>`;
   if (usesAppStore) {
     // iOS: App Store purchase only — no web checkout, licence keys or links to the pricing page
     $('fullBody').innerHTML = `${perkHtml}
@@ -593,6 +613,24 @@ function renderFull(msg = '') {
     <p id="fullMsg" class="full-msg">${msg}</p>`;
 }
 $('fullBody').addEventListener('click', async e => {
+  if (e.target.closest('#fullAd')) {
+    const btn = $('fullAd'), scene = fullFor;
+    btn.disabled = true;
+    // quiet the ambient sound and stop drawing while the ad plays
+    const result = await showRewarded({
+      pause: () => { engine.setMaster(0); world.setPaused(true); },
+      resume: () => { engine.setMaster(settings.master); world.setPaused(false); },
+    });
+    if (result === 'rewarded' && scene) {
+      startTrial(scene);
+      closeSheets();
+      pickScene(scene);
+      return;
+    }
+    $('fullMsg').textContent = t({ closed: 'ad.closed', limit: 'ad.limit' }[result] || 'ad.noad');
+    btn.disabled = result === 'limit';
+    return;
+  }
   if (usesAppStore && e.target.closest('#fullBuy, #fullRestore')) {
     const btn = e.target.closest('button'), msg = $('fullMsg');
     btn.disabled = true; msg.textContent = t('full.checking');
@@ -629,6 +667,11 @@ $('fullBody').addEventListener('click', async e => {
 });
 $('fullBody').addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.id === 'fullKey') $('fullGo').click(); });
 if (paywallOn) recheck();
+// Google's ad privacy choices (consent form), app only
+if (native.isNative) {
+  $('adPrivacy').hidden = false;
+  $('adPrivacy').onclick = e => { e.preventDefault(); showAdPrivacy(); };
+}
 // App Store rules: the pricing page describes web checkout, so the iOS app doesn't link to it
 if (usesAppStore) document.querySelectorAll('[data-no-ios]').forEach(el => el.remove());
 
