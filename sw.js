@@ -1,5 +1,5 @@
 // Offline support for the web/PWA build: app files are network-first so updates land.
-const CACHE = 'seasontree-v10';
+const CACHE = 'seasontree-v11';
 const CORE = ['./', 'index.html', 'style.css', 'app.js', 'core.js', 'tree.js', 'audio.js', 'native.js', 'i18n.js', 'manifest.webmanifest',
   'scenes/common.js', 'scenes/sea.js', 'scenes/lotus.js', 'scenes/candle.js', 'scenes/aurora.js',
   'scenes/rain.js', 'scenes/snow.js', 'scenes/camp.js', 'scenes/whale.js', 'scenes/overlook.js', 'scenes/lighthouse.js', 'scenes/mountain.js', 'scenes/deer.js',

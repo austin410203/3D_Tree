@@ -554,6 +554,9 @@ native.onBack(() => {
 });
 
 // icons: fall back to the emoji if an image fails to load
+// store rules: the pricing page (which mentions web checkout) is shown on the web only
+if (native.isNative) document.querySelectorAll('[data-web-only]').forEach(el => el.remove());
+
 addEventListener('error', e => {
   const el = e.target;
   if (el.tagName === 'IMG' && el.dataset.fallback) { const s = document.createElement('span'); s.className = 'ico-emoji'; s.textContent = el.dataset.fallback; el.replaceWith(s); }

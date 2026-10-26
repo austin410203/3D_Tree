@@ -2,6 +2,8 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "calm-moments",
   "compatibility_date": "2026-10-19",
+  "routes": [{ "pattern": "calm.emptyoffice.app", "custom_domain": true }],
+  "workers_dev": true,
   "assets": {
     "directory": "."
   }
