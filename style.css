@@ -37,6 +37,8 @@ button { font: inherit; color: inherit; cursor: pointer; border: 0; background: 
 .lang-btn { position: absolute; right: 16px; top: -4px; pointer-events: auto; padding: 6px 12px; border-radius: 999px; font-size: 13px;
   background: var(--glass); border: 1px solid var(--line); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
 .lang-btn b { font-weight: 600; }
+.lang-btn { display: inline-flex; align-items: center; gap: 5px; }
+.lang-btn img.ico { width: 18px; height: 18px; }
 .title h1 { margin: 0; font-size: 22px; letter-spacing: .14em; font-weight: 600; }
 .title p { margin: 4px 0 0; font-size: 13px; letter-spacing: .2em; color: var(--ink-soft); }
 
@@ -189,6 +191,7 @@ body.night .chips button.on { color: #1b2040; }
 .mixer { margin: 14px 0 6px; display: grid; gap: 4px; }
 .track { display: grid; grid-template-columns: 30px 72px 1fr; align-items: center; gap: 6px; padding: 6px 0; }
 .track span { font-size: 18px; text-align: center; }
+.track img.ico { width: 26px; height: 26px; justify-self: center; }
 .track b { font-size: 14px; font-weight: 500; }
 .row { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 0; font-size: 14px; border-top: 1px solid rgba(127, 127, 140, .15); }
 .row input[type=range] { flex: 1; max-width: 260px; }

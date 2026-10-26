@@ -442,7 +442,7 @@ const sliders = {};
 for (const t of TRACKS) {
   const row = document.createElement('label');
   row.className = 'track';
-  row.innerHTML = `<span>${t.icon}</span><b data-i18n="track.${t.id}"></b><input type="range" min="0" max="1" step="0.01">`;
+  row.innerHTML = `<img class="ico" src="icons/ui/track-${t.id}.png" alt="" data-fallback="${t.icon}"><b data-i18n="track.${t.id}"></b><input type="range" min="0" max="1" step="0.01">`;
   const input = row.querySelector('input');
   input.oninput = () => {
     engine.start();
