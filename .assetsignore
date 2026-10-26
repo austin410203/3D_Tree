@@ -13,3 +13,5 @@ scripts
 art
 www
 docs
+worker
+.dev.vars

@@ -16,8 +16,9 @@
 - 付費牆出現時機：在場景選單點到鎖住的場景時，顯示預覽與「完整版」頁。
 
 ## 尚未完成
-- [ ] 網頁版解鎖程式：照 TrainPlatform 的 `src/store.js`（序號啟用、定期重新驗證、`?lstest`）與 Worker `license()`；`wrangler.jsonc` 加 `vars`（`LS_STORE_ID`、`LS_PRODUCT_ID`、`LS_LIVE`）。
-- [ ] 場景選單上鎖 🔒、完整版頁（內容清單、價格、輸入序號、啟用）。
-- [ ] 方案頁 `scripts/legal_gen.py` 的 C["pass"] 改成免費 vs 完整版對照表，再重新產生。
-- [ ] Lemon Squeezy 從測試模式切到正式模式（老闆操作）。
-- [ ] Android 版改用 Google Play 內購，App 內不顯示網頁結帳。
+- [x] 網頁版解鎖程式（store.js、worker/index.js；本機測試用 .dev.vars 的 LS_MOCK=1 + TEST- 開頭序號）：照 TrainPlatform 的 `src/store.js`（序號啟用、定期重新驗證、`?lstest`）與 Worker `license()`；`wrangler.jsonc` 加 `vars`（`LS_STORE_ID`、`LS_PRODUCT_ID`、`LS_LIVE`）。
+- [x] 場景選單上鎖 🔒、完整版頁（內容清單、價格、輸入序號、啟用）。
+- [x] 方案頁 `scripts/legal_gen.py` 的 C["pass"] 改成免費 vs 完整版對照表，再重新產生。
+- [ ] 用 `?lstest` 開網頁，以 Lemon Squeezy 測試卡實際買一次並啟用。
+- [ ] Lemon Squeezy 從測試模式切到正式模式（老闆操作），之後把 store.js 的 `LIVE` 改 true、wrangler 的 `LS_LIVE` 改 "1"。
+- [ ] Android 版改用 Google Play 內購，App 內不顯示網頁結帳（目前原生 App 的 paywallOn = false，全部場景開放）。

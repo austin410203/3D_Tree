@@ -1,10 +1,18 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "calm-moments",
+  "main": "worker/index.js",
   "compatibility_date": "2026-10-19",
-  "routes": [{ "pattern": "calm.emptyoffice.app", "custom_domain": true }],
-  "workers_dev": true,
   "assets": {
-    "directory": "."
-  }
+    "directory": ".",
+    "binding": "ASSETS",
+    "run_worker_first": ["/api/*"]
+  },
+  // brand domain: every app gets its own subdomain of emptyoffice.app (Cloudflare creates DNS + certificate on deploy)
+  "routes": [{ "pattern": "calm.emptyoffice.app", "custom_domain": true }],
+  // keep the old *.workers.dev address working too (routes switch it off by default)
+  "workers_dev": true,
+  // Lemon Squeezy store "Empty Office" (emptyofficex.lemonsqueezy.com) and the 完整版 product.
+  // LS_LIVE=1 once the store takes real payments: test-mode licence keys are refused from then on.
+  "vars": { "LS_STORE_ID": "507523", "LS_PRODUCT_ID": "1474549", "LS_LIVE": "0" }
 }

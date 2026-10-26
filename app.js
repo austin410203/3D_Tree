@@ -1,6 +1,7 @@
 import { world, SCENES } from './core.js';
 import { SoundEngine, TRACKS, PRESETS } from './audio.js';
 import { native } from './native.js';
+import { PASS, FREE_SCENES, paywallOn, isSceneLocked, passInfo, activate, recheck } from './store.js';
 import { t, setLang, detectLang, LANGS, applyStatic, getLang } from './i18n.js';
 
 // ---------------------------------------------------------------- data
@@ -73,6 +74,7 @@ const sceneText = id => t(`scene.${id}`);
 // scene switch: sheet controls, subtitle and the "跟著場景" sound all follow it
 world.onScene = () => { applyScene(true); refreshChips(); };
 async function pickScene(id) {
+  if (isSceneLocked(id)) { openSheet('full'); return; }
   settings.scene = id;
   if (settings.preset !== 'off') settings.preset = 'scene';
   save();
@@ -366,6 +368,7 @@ function renderStats() {
 function openSheet(name) {
   closeSheets();
   if (name === 'stats') renderStats();
+  if (name === 'full') renderFull();
   $('sheet-' + name).classList.add('on');
   $('scrim').classList.add('on');
 }
@@ -408,7 +411,11 @@ function refreshChips() {
     const [sn, sd] = sceneText(sc.id);
     b.innerHTML = `<img class="ico" src="icons/ui/scene-${sc.id}.png" alt="" data-fallback="${sc.icon}"><b>${sn}</b><small>${sd}</small>`;
     b.classList.toggle('on', sc.id === world.scene);
-    b.onclick = () => { pickScene(sc.id); closeSheets(); };
+    if (isSceneLocked(sc.id)) {
+      b.classList.add('locked');
+      b.insertAdjacentHTML('beforeend', `<i class="lock">🔒 ${t('full.locked')}</i>`);
+      b.onclick = () => openSheet('full');
+    } else b.onclick = () => { pickScene(sc.id); closeSheets(); };
     $('sceneList').appendChild(b);
   }
   const info = world.info;
@@ -554,6 +561,48 @@ native.onBack(() => {
 });
 
 // icons: fall back to the emoji if an image fails to load
+// ---------------------------------------------------------------- 完整版 (web: Lemon Squeezy licence key, see store.js)
+function renderFull(msg = '') {
+  const info = passInfo();
+  $('fullSub').textContent = info ? t('full.subOk') : t('full.sub');
+  if (info) {
+    $('fullBody').innerHTML = `<div class="full-ok">✅ ${t('full.ok')}<small>${t('full.okInfo', info.key, info.since)}</small></div>`;
+    return;
+  }
+  const paid = SCENES.filter(sc => !FREE_SCENES.includes(sc.id));
+  const perks = [
+    ['✨', t('full.perkScenes', paid.length), paid.map(sc => sceneText(sc.id)[0]).join('・')],
+    ['🌱', t('full.perkFuture'), t('full.perkFutureD')],
+    ['🎧', t('full.perkFree'), t('full.perkFreeD')],
+  ];
+  $('fullBody').innerHTML = `<div class="full-perks">${perks.map(([i, h, p]) => `<div><i>${i}</i><b>${h}</b><span>${p}</span></div>`).join('')}</div>
+    <button id="fullBuy" class="full-buy">${t('full.buy', PASS.price)}</button>
+    <p class="full-note">${t('full.note')} <a href="pass.html">${t('full.more')}</a></p>
+    <div class="full-key"><input id="fullKey" placeholder="${t('full.keyPh')}" autocomplete="off" spellcheck="false"><button id="fullGo">${t('full.activate')}</button></div>
+    <p id="fullMsg" class="full-msg">${msg}</p>`;
+}
+$('fullBody').addEventListener('click', async e => {
+  if (e.target.closest('#fullBuy')) {
+    if (PASS.checkoutUrl) window.open(PASS.checkoutUrl, '_blank', 'noopener');
+    else $('fullMsg').textContent = t('full.soon');
+    return;
+  }
+  if (!e.target.closest('#fullGo')) return;
+  const go = $('fullGo'), msg = $('fullMsg');
+  go.disabled = true; msg.textContent = t('full.checking');
+  try {
+    await activate($('fullKey').value);
+    msg.textContent = t('full.done');
+    setTimeout(() => location.reload(), 900);
+  } catch (err) {
+    const why = { empty: 'empty', limit: 'limit', invalid: 'invalid', 'not configured': 'config' }[err.message] || 'other';
+    msg.textContent = t('full.err.' + why);
+    go.disabled = false;
+  }
+});
+$('fullBody').addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.id === 'fullKey') $('fullGo').click(); });
+if (paywallOn) recheck();
+
 // store rules: the pricing page (which mentions web checkout) is shown on the web only
 if (native.isNative) document.querySelectorAll('[data-web-only]').forEach(el => el.remove());
 
@@ -573,7 +622,7 @@ $('introStart').addEventListener('click', () => { engine.start(); applySound(); 
 
 // ---------------------------------------------------------------- boot
 setLang(settings.lang);
-await world.setScene(SCENES.some(s => s.id === settings.scene) ? settings.scene : 'tree', true);
+await world.setScene(SCENES.some(s => s.id === settings.scene) && !isSceneLocked(settings.scene) ? settings.scene : 'tree', true);
 applyLang();
 applyScene(true);
 world.setAutoRotate(0.3);

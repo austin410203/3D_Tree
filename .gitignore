@@ -8,3 +8,4 @@ android/local.properties
 android/capacitor-cordova-android-plugins/build/
 *.apk
 !dist/*.apk
+.dev.vars
