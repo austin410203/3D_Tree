@@ -248,3 +248,4 @@ input[type=checkbox] { width: 20px; height: 20px; accent-color: var(--accent); }
 .full-msg { min-height: 1.4em; margin: 8px 0 0; font-size: 13px; }
 .full-ok { padding: 16px; border-radius: 14px; background: rgba(127, 127, 140, .08); font-weight: 600; }
 .full-ok small { display: block; margin-top: 4px; font-weight: 400; font-size: 12px; color: var(--ink-soft); }
+.full-restore { display: block; margin: 0 auto; padding: 8px 16px; border-radius: 999px; font-size: 13px; color: var(--ink-soft); background: rgba(127, 127, 140, .12); }

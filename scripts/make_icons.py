@@ -126,6 +126,16 @@ def main():
     save(full.convert('RGB'), os.path.join(icons, 'apple-touch-icon.png'), 180)
     save(safe.convert('RGB'), os.path.join(icons, 'icon-maskable-512.png'), 512)
 
+    # iOS: one opaque 1024 icon (the App Store copy too), and a square launch image the launch
+    # storyboard crops to the screen, so the icon sits in the middle where every crop keeps it
+    assets = os.path.join(ROOT, 'ios', 'App', 'App', 'Assets.xcassets')
+    if os.path.isdir(assets):
+        save(full.convert('RGB'), os.path.join(assets, 'AppIcon.appiconset', 'AppIcon-512@2x.png'), 1024)
+        save(full.convert('RGB'), os.path.join(ROOT, 'store', 'icon-1024.png'), 1024)
+        sq = pastel_splash(2732, 2732, full)
+        for name in ('splash-2732x2732.png', 'splash-2732x2732-1.png', 'splash-2732x2732-2.png'):
+            sq.save(os.path.join(assets, 'Splash.imageset', name), optimize=True)
+
     res = os.path.join(ROOT, 'android', 'app', 'src', 'main', 'res')
     if not os.path.isdir(res):
         return

@@ -1,7 +1,7 @@
 # 條款頁產生器（靜心時光版，取自 Company/playbooks/templates/legal_gen.py）。
 # 執行 python scripts/legal_gen.py → 在 repo 根目錄產生 pass/terms/refund/privacy/contact.html + legal.css（四語系）。
 # 免費 4 個場景，其餘用網頁版「完整版」序號（Lemon Squeezy，NT$30）解鎖；改價格或免費範圍時要同步 store.js。
-import os, html
+import os, html, re
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
 EMAIL = "hello@emptyoffice.app"
 DATE = "2026-10-27"
@@ -352,15 +352,27 @@ C["contact"] = {
 }
 
 
+# App Store rule 3.1.1: the iOS app may not point to web checkout or licence keys, so those parts carry
+# class="web-only" and the page script removes them inside the iOS app.
+def web_only(key, body):
+    if key in ("terms", "privacy"):
+        body = re.sub(r'<li>(?=(?:(?!</li>).)*?(Lemon Squeezy|Google Fonts|序號|キー|\bkey|키))', '<li class="web-only">', body, flags=re.S)
+    if key == "refund":
+        body = re.sub(r'(<h2>[^<]*</h2><ul>.*?</ul>)', r'<div class="web-only">\g<1></div>', body, count=1, flags=re.S)
+    if key == "contact":
+        body = re.sub(r'(<h3>[^<]*(序號|キー|key|키)[^<]*</h3><p>.*?</p>)', r'<div class="web-only">\g<1></div>', body, flags=re.S | re.I)
+    return body
+
+
 def page(key):
     sections = []
     for code, _ in LANGS:
-        nav = " · ".join(f'<a href="{k}.html" class="{"on" if k == key else ""}">{html.escape(NAV[k][code])}</a>' for k in NAV)
+        nav = "".join(f'<a href="{k}.html" class="{"on" if k == key else ""}{" web-only" if k == "pass" else ""}">{html.escape(NAV[k][code])}</a>' for k in NAV)
         sections.append(f'''<section lang="{code}" data-l="{code}">
   <nav class="top"><a href="./" class="back">{BACK[code]}</a></nav>
   <h1>{NAV[key][code]}</h1>
   <p class="upd">{UPDATED[code]}：{DATE}</p>
-  {C[key][code]}
+  {web_only(key, C[key][code])}
   <footer><nav>{nav}</nav><p>Empty Office · {M}</p></footer>
 </section>''')
     switch = "".join(f'<button data-l="{c}">{n}</button>' for c, n in LANGS)
@@ -394,6 +406,10 @@ def page(key):
     show(l);
   }});
   show(pick());
+  if (window.Capacitor && window.Capacitor.getPlatform && window.Capacitor.getPlatform() === 'ios') {{
+    document.querySelectorAll('.web-only').forEach(function (el) {{ el.remove(); }});
+    document.querySelectorAll('a[href="pass.html"]').forEach(function (a) {{ a.replaceWith(document.createTextNode(a.textContent)); }});
+  }}
 }})();
 </script></body></html>
 '''
@@ -421,6 +437,7 @@ th { background: #f5e8f0; }
 td:first-child { font-weight: 700; white-space: nowrap; }
 footer { margin-top: 40px; padding-top: 16px; border-top: 1.5px solid #d9c6d6; font-size: 13.5px; color: #6c6274; }
 footer nav a { color: inherit; }
+footer nav a + a::before { content: " · "; color: #6c6274; display: inline-block; white-space: pre; text-decoration: none; }
 footer nav a.on { font-weight: 700; color: var(--ink); text-decoration: none; }
 @media (max-width: 560px) { h1 { font-size: 25px; } td:first-child { white-space: normal; } table { font-size: 13.5px; } }
 """

@@ -1,7 +1,7 @@
 import { world, SCENES } from './core.js';
 import { SoundEngine, TRACKS, PRESETS } from './audio.js';
 import { native } from './native.js';
-import { PASS, FREE_SCENES, paywallOn, isSceneLocked, passInfo, activate, recheck } from './store.js';
+import { PASS, FREE_SCENES, paywallOn, isSceneLocked, passInfo, activate, recheck, usesAppStore, iapPrice, iapBuy, iapRestore } from './store.js';
 import { t, setLang, detectLang, LANGS, applyStatic, getLang } from './i18n.js';
 
 // ---------------------------------------------------------------- data
@@ -566,7 +566,7 @@ function renderFull(msg = '') {
   const info = passInfo();
   $('fullSub').textContent = info ? t('full.subOk') : t('full.sub');
   if (info) {
-    $('fullBody').innerHTML = `<div class="full-ok">✅ ${t('full.ok')}<small>${t('full.okInfo', info.key, info.since)}</small></div>`;
+    $('fullBody').innerHTML = `<div class="full-ok">✅ ${t('full.ok')}${info.key ? `<small>${t('full.okInfo', info.key, info.since)}</small>` : ''}</div>`;
     return;
   }
   const paid = SCENES.filter(sc => !FREE_SCENES.includes(sc.id));
@@ -575,13 +575,39 @@ function renderFull(msg = '') {
     ['🌱', t('full.perkFuture'), t('full.perkFutureD')],
     ['🎧', t('full.perkFree'), t('full.perkFreeD')],
   ];
-  $('fullBody').innerHTML = `<div class="full-perks">${perks.map(([i, h, p]) => `<div><i>${i}</i><b>${h}</b><span>${p}</span></div>`).join('')}</div>
+  const perkHtml = `<div class="full-perks">${perks.map(([i, h, p]) => `<div><i>${i}</i><b>${h}</b><span>${p}</span></div>`).join('')}</div>`;
+  if (usesAppStore) {
+    // iOS: App Store purchase only — no web checkout, licence keys or links to the pricing page
+    $('fullBody').innerHTML = `${perkHtml}
+      <button id="fullBuy" class="full-buy">${t('full.buy', PASS.price)}</button>
+      <p class="full-note">${t('full.storeNote')}</p>
+      <button id="fullRestore" class="full-restore">${t('full.restore')}</button>
+      <p id="fullMsg" class="full-msg">${msg}</p>`;
+    iapPrice().then(p => { if (p && $('fullBuy')) $('fullBuy').textContent = t('full.buy', p); });
+    return;
+  }
+  $('fullBody').innerHTML = `${perkHtml}
     <button id="fullBuy" class="full-buy">${t('full.buy', PASS.price)}</button>
     <p class="full-note">${t('full.note')} <a href="pass.html">${t('full.more')}</a></p>
     <div class="full-key"><input id="fullKey" placeholder="${t('full.keyPh')}" autocomplete="off" spellcheck="false"><button id="fullGo">${t('full.activate')}</button></div>
     <p id="fullMsg" class="full-msg">${msg}</p>`;
 }
 $('fullBody').addEventListener('click', async e => {
+  if (usesAppStore && e.target.closest('#fullBuy, #fullRestore')) {
+    const btn = e.target.closest('button'), msg = $('fullMsg');
+    btn.disabled = true; msg.textContent = t('full.checking');
+    if (btn.id === 'fullBuy') {
+      const status = await iapBuy();
+      msg.textContent = status === 'purchased' ? t('full.done') : status === 'pending' ? t('full.pending') : status === 'cancelled' ? '' : t('full.err.other');
+      if (status === 'purchased') { setTimeout(() => location.reload(), 900); return; }
+    } else {
+      const owned = await iapRestore();
+      msg.textContent = owned ? t('full.done') : t('full.noPurchase');
+      if (owned) { setTimeout(() => location.reload(), 900); return; }
+    }
+    btn.disabled = false;
+    return;
+  }
   if (e.target.closest('#fullBuy')) {
     // in the app, leaving the page for another site hands the link to the phone's browser
     if (PASS.checkoutUrl) native.isNative ? (location.href = PASS.checkoutUrl) : window.open(PASS.checkoutUrl, '_blank', 'noopener');
@@ -603,6 +629,8 @@ $('fullBody').addEventListener('click', async e => {
 });
 $('fullBody').addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.id === 'fullKey') $('fullGo').click(); });
 if (paywallOn) recheck();
+// App Store rules: the pricing page describes web checkout, so the iOS app doesn't link to it
+if (usesAppStore) document.querySelectorAll('[data-no-ios]').forEach(el => el.remove());
 
 addEventListener('error', e => {
   const el = e.target;

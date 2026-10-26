@@ -1,8 +1,9 @@
 // Thin bridge to Capacitor plugins. No bundler: native plugins are reached through
 // window.Capacitor.Plugins, and every call falls back to a web API (or a no-op)
-// so the same files run on Vercel and inside the Android app.
+// so the same files run on the web (Cloudflare) and inside the Android and iOS apps.
 const Cap = window.Capacitor;
 export const isNative = !!Cap?.isNativePlatform?.();
+export const platform = isNative ? Cap.getPlatform() : 'web';
 const P = isNative ? Cap.Plugins : {};
 
 let wakeLock = null;
@@ -27,7 +28,7 @@ export const native = {
     } catch { /* not supported */ }
   },
 
-  // foreground service so sound keeps playing with the screen off (Android only)
+  // keeps sound playing with the screen off: an Android foreground service, or the iOS playback audio session
   backgroundAudio(on, text, title = '靜心時光') {
     if (!P.BackgroundAudio) return;
     (on ? P.BackgroundAudio.start({ title, text }) : P.BackgroundAudio.stop()).catch(() => {});
