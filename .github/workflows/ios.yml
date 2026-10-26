@@ -41,7 +41,10 @@ jobs:
           script -q -F app.log xcrun simctl launch --console-pty "$DEVICE" com.austin410203.seasontree > /dev/null 2>&1 &
           sleep 40
           xcrun simctl io "$DEVICE" screenshot sim.png || true
-          grep -E "To Native ->|ERROR|error" app.log | head -n 40 || true
+          echo "---- app stdout (last 80 lines) ----"; tail -n 80 app.log || true
+          echo "---- is the app still running? ----"; xcrun simctl spawn "$DEVICE" launchctl list | grep -i seasontree || echo "app not running"
+          echo "---- system log for the app (last 60 lines) ----"
+          xcrun simctl spawn "$DEVICE" log show --last 3m --style compact --predicate 'process == "App"' 2>/dev/null | grep -v -i "fault\b" | tail -n 60 || true
           grep -q "To Native ->  Store getEntitlements" app.log
       - uses: actions/upload-artifact@v4
         if: always()
