@@ -37,7 +37,7 @@
 
 ## 廣告（AdMob，見 MONETIZATION.md）
 - [ ] 老闆：AdMob 建立 iOS／Android 應用程式與獎勵廣告單元，交給 Claude App ID、廣告單元 ID、app-ads.txt 那一行
-- [ ] Claude：換成正式 ID、部署 https://emptyoffice.app/app-ads.txt
+- [ ] Claude：換成正式 ID（app-ads.txt 已由品牌網站部署：pub-4390142574700801）
 - [ ] 商店頁「開發者網站」填 https://emptyoffice.app
 
 ## 發布

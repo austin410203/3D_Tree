@@ -35,7 +35,8 @@
 - 本機測試：網址加 `?adtest`，用 3 秒的假廣告跑完整流程。
 - 去廣告方式：完整版（App Store 內購 `com.austin410203.seasontree.full` 或網頁序號）。買了之後所有場景都解鎖，廣告入口自然消失。
 - 兒童受眾：否。
-- 正式上線前要換的設定：`ads.js` 的 `ADMOB.test` 改 false 並填正式廣告單元；`ios/App/App/Info.plist` 的 `GADApplicationIdentifier`、`android/app/src/main/AndroidManifest.xml` 的 AdMob App ID 改成正式值；`https://emptyoffice.app/app-ads.txt` 放 AdMob 提供的那一行。
+- 正式上線前要換的設定：`ads.js` 的 `ADMOB.test` 改 false 並填正式廣告單元；`ios/App/App/Info.plist` 的 `GADApplicationIdentifier`、`android/app/src/main/AndroidManifest.xml` 的 AdMob App ID 改成正式值；`https://emptyoffice.app/app-ads.txt` 已上線（`google.com, pub-4390142574700801, DIRECT, f08c47fec0942fa0`，EmptyOfficeSite repo 負責）。
+- 網頁：AdSense 已送審（發布商 pub-4390142574700801，2026-10-27）。獎勵廣告要等「H5 遊戲廣告（Ad Placement API）」另外核准，在那之前**不要**把 ca-pub 填進程式，繼續用自家廣告卡。
 
 ### 檢查
 - [x] 付費後沒有廣告入口（全部場景已解鎖）
