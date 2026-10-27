@@ -3,6 +3,7 @@
 #    Store / BackgroundAudio plugins answer, to prove the Xcode project builds and runs
 #  - "Run workflow" with testflight=true: also archive, sign and upload to TestFlight
 #    needs repo secrets: APPLE_TEAM_ID, ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_P8 (App Store Connect API key, .p8 contents)
+#    the key must have the Admin role: cloud signing refuses App Manager keys
 # Manual only: macOS minutes count 10x against the Actions quota while the repo is private.
 name: iOS
 
@@ -71,21 +72,43 @@ jobs:
       - name: Write App Store Connect key
         env:
           ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
-          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
         run: |
-          mkdir -p ~/private_keys
-          printf '%s' "$ASC_KEY_P8" > ~/private_keys/AuthKey_$ASC_KEY_ID.p8
+          mkdir -p "$RUNNER_TEMP/keys"
+          K="$RUNNER_TEMP/keys/AuthKey.p8"
+          # Notepad pastes add CR; add the BEGIN/END lines if they were left out
+          printf '%s\n' "$ASC_KEY_P8" | tr -d '\r' | sed '/^[[:space:]]*$/d' > "$K"
+          if ! grep -q 'BEGIN PRIVATE KEY' "$K"; then
+            { echo '-----BEGIN PRIVATE KEY-----'; tr -d ' \n' < "$K" | fold -w 64; echo; echo '-----END PRIVATE KEY-----'; } > "$K.tmp" && mv "$K.tmp" "$K"
+          fi
+          openssl pkey -in "$K" -noout || { echo "::error::ASC_KEY_P8 is not a valid private key (paste the whole .p8 again)"; exit 1; }
+      - name: Check the key against the App Store Connect API
+        env:
+          ISSUER: ${{ secrets.ASC_ISSUER_ID }}
+          KEY_ID: ${{ secrets.ASC_KEY_ID }}
+        run: |
+          pip3 install --quiet --break-system-packages pyjwt cryptography 2>/dev/null || pip3 install --quiet pyjwt cryptography
+          python3 - <<'PY'
+          import os, time, urllib.request, urllib.error, jwt
+          key = open(os.environ["RUNNER_TEMP"] + "/keys/AuthKey.p8").read()
+          tok = jwt.encode({"iss": os.environ["ISSUER"], "iat": int(time.time()), "exp": int(time.time()) + 600,
+                            "aud": "appstoreconnect-v1"}, key, algorithm="ES256", headers={"kid": os.environ["KEY_ID"]})
+          req = urllib.request.Request("https://api.appstoreconnect.apple.com/v1/apps?limit=1", headers={"Authorization": "Bearer " + tok})
+          try:
+              print("App Store Connect API:", urllib.request.urlopen(req).status)
+          except urllib.error.HTTPError as e:
+              print("::error::App Store Connect API answered", e.code, "- ASC_KEY_ID must be the Key ID of the pasted .p8", e.read()[:300].decode(errors="replace"))
+              raise SystemExit(1)
+          PY
       - name: Archive and upload
         env:
           TEAM: ${{ secrets.APPLE_TEAM_ID }}
           KEY_ID: ${{ secrets.ASC_KEY_ID }}
           ISSUER: ${{ secrets.ASC_ISSUER_ID }}
         run: |
-          AUTH="-allowProvisioningUpdates -authenticationKeyPath $HOME/private_keys/AuthKey_$KEY_ID.p8 -authenticationKeyID $KEY_ID -authenticationKeyIssuerID $ISSUER"
-          xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Release \
-            -destination 'generic/platform=iOS' -archivePath build/App.xcarchive \
-            DEVELOPMENT_TEAM=$TEAM CODE_SIGN_STYLE=Automatic CURRENT_PROJECT_VERSION=${{ github.run_number }} \
-            $AUTH archive | tail -n 40
+          set -o pipefail
+          AUTH="-allowProvisioningUpdates -authenticationKeyPath $RUNNER_TEMP/keys/AuthKey.p8 -authenticationKeyID $KEY_ID -authenticationKeyIssuerID $ISSUER"
+          # keep the error lines: tail alone hid why the archive failed
+          xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Release             -destination 'generic/platform=iOS' -archivePath build/App.xcarchive             DEVELOPMENT_TEAM=$TEAM CODE_SIGN_STYLE=Automatic CURRENT_PROJECT_VERSION=${{ github.run_number }}             $AUTH archive 2>&1 | tee archive.log | grep -v 'DVTServices: Received response' | tail -n 40             || { grep -E 'error:|Error' archive.log | grep -v DVTServices | head -n 30; exit 1; }
           cat > ExportOptions.plist <<PLIST
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -96,5 +119,7 @@ jobs:
             <key>signingStyle</key><string>automatic</string>
           </dict></plist>
           PLIST
-          xcodebuild -exportArchive -archivePath build/App.xcarchive -exportOptionsPlist ExportOptions.plist \
-            -exportPath build/export $AUTH | tail -n 40
+          xcodebuild -exportArchive -archivePath build/App.xcarchive -exportOptionsPlist ExportOptions.plist             -exportPath build/export $AUTH 2>&1 | tee export.log | grep -v 'DVTServices: Received response' | tail -n 40             || { grep -q "Cloud signing permission" export.log && echo "::error::Cloud signing needs an Admin-role API key; App Manager keys cannot export"; exit 1; }
+      - name: Remove the key
+        if: always()
+        run: rm -rf "$RUNNER_TEMP/keys"
