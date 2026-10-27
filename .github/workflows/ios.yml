@@ -37,10 +37,16 @@ jobs:
         run: |
           DEVICE=$(xcrun simctl list devices available -j | python3 -c "import json,sys; d=json.load(sys.stdin)['devices']; print(next(x['udid'] for k in sorted(d, reverse=True) if 'iOS' in k for x in d[k] if x['name'].startswith('iPhone')))")
           xcrun simctl boot "$DEVICE"
+          xcrun simctl bootstatus "$DEVICE" -b > /dev/null
           xcrun simctl install "$DEVICE" build/Build/Products/Debug-iphonesimulator/App.app
-          # console-pty streams the app's stdout (Capacitor logs every JS -> native call)
-          script -q -F app.log xcrun simctl launch --console-pty "$DEVICE" com.austin410203.seasontree > /dev/null 2>&1 &
-          sleep 40
+          # the first launch on a fresh simulator sometimes never starts the app: try twice
+          for TRY in 1 2; do
+            # console-pty streams the app's stdout (Capacitor logs every JS -> native call)
+            script -q -F app.log xcrun simctl launch --console-pty --terminate-running-process "$DEVICE" com.austin410203.seasontree > /dev/null 2>&1 &
+            sleep 40
+            grep -q "To Native ->  Store getEntitlements" app.log && break
+            echo "launch $TRY: plugin call not seen yet"
+          done
           xcrun simctl io "$DEVICE" screenshot sim.png || true
           echo "---- app stdout (last 80 lines) ----"; tail -n 80 app.log || true
           echo "---- is the app still running? ----"; xcrun simctl spawn "$DEVICE" launchctl list | grep -i seasontree || echo "app not running"
@@ -57,8 +63,9 @@ jobs:
           if-no-files-found: ignore
 
   testflight:
+    # runs beside the simulator check: archiving compiles the app anyway, and a flaky
+    # simulator launch must not block the upload
     if: github.event_name == 'workflow_dispatch' && inputs.testflight
-    needs: build
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
