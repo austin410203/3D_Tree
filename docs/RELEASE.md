@@ -35,8 +35,8 @@
 - [x] 年齡分級問卷：廣告＝有、健康或保健主題＝有，其他全部無 → 多數國家 9+（越南 12+、巴西 AL、韓國 ALL）
 - [x] App 隱私已發布：隱私權網址（四語）https://calm.emptyoffice.app/privacy.html；收集 7 種（大略位置、裝置 ID、產品互動、廣告資料、當機、效能、其他診斷），用途第三方廣告＋分析（診斷類只有分析），都「不連結到身分」；裝置 ID 與廣告資料「用來追蹤」
 - [x] App 審查資訊：不需登入、聯絡人 Yno Huang／+886 2 8785 3793／hello@emptyoffice.app、備註＝store/review-notes.md
-- [x] GitHub Secrets：`APPLE_TEAM_ID`、`ASC_KEY_ID`（7F3SR5UVSM，團隊金鑰「Tidebuilt」，App 管理）、`ASC_ISSUER_ID`
-- [ ] 老闆：`ASC_KEY_P8`＝Downloads/AuthKey_7F3SR5UVSM.p8 全文（私鑰，Claude 不代貼）
+- [x] GitHub Secrets：`APPLE_TEAM_ID`、`ASC_ISSUER_ID`、`ASC_KEY_ID`＝KTY4FDCB85（團隊金鑰「Tide」，角色 Admin；App 管理角色的金鑰不能雲端簽章，run #4 因此失敗）
+- [ ] 老闆：`ASC_KEY_P8`＝Downloads/AuthKey_KTY4FDCB85.p8 全文（私鑰，Claude 不代貼）
 - [ ] 選擇性：內購家人共享（開了不能關）、DSA 交易者身分（目前非交易者）
 
 ## 廣告（AdMob，見 MONETIZATION.md）
