@@ -97,19 +97,28 @@ jobs:
           python3 - <<'PY'
           import os, time, urllib.request, urllib.error, jwt
           key = open(os.environ["RUNNER_TEMP"] + "/keys/AuthKey.p8").read()
-          tok = jwt.encode({"iss": os.environ["ISSUER"], "iat": int(time.time()), "exp": int(time.time()) + 600,
-                            "aud": "appstoreconnect-v1"}, key, algorithm="ES256", headers={"kid": os.environ["KEY_ID"]})
-          req = urllib.request.Request("https://api.appstoreconnect.apple.com/v1/apps?limit=1", headers={"Authorization": "Bearer " + tok})
-          try:
-              print("App Store Connect API:", urllib.request.urlopen(req).status)
-          except urllib.error.HTTPError as e:
-              print("::error::App Store Connect API answered", e.code, "- ASC_KEY_ID must be the Key ID of the pasted .p8", e.read()[:300].decode(errors="replace"))
+          # Key IDs are not secret: if ASC_KEY_ID does not match the pasted .p8, find the one that does
+          # among the account's Admin team keys ("cal moment", "Tide")
+          for kid in [os.environ["KEY_ID"], "9KFVB24SGW", "KTY4FDCB85"]:
+              tok = jwt.encode({"iss": os.environ["ISSUER"], "iat": int(time.time()), "exp": int(time.time()) + 600,
+                                "aud": "appstoreconnect-v1"}, key, algorithm="ES256", headers={"kid": kid})
+              req = urllib.request.Request("https://api.appstoreconnect.apple.com/v1/apps?limit=1", headers={"Authorization": "Bearer " + tok})
+              try:
+                  print("App Store Connect API:", urllib.request.urlopen(req).status, "with key", kid)
+              except urllib.error.HTTPError as e:
+                  print("key", kid, "->", e.code)
+                  continue
+              if kid != os.environ["KEY_ID"]:
+                  print("::warning::the pasted .p8 belongs to key", kid, "- set ASC_KEY_ID to it")
+              open(os.environ["GITHUB_ENV"], "a").write("KEY_ID=" + kid + "\n")
+              break
+          else:
+              print("::error::App Store Connect answered 401 - ASC_KEY_ID must be the Key ID of the pasted .p8")
               raise SystemExit(1)
           PY
       - name: Archive and upload
         env:
           TEAM: ${{ secrets.APPLE_TEAM_ID }}
-          KEY_ID: ${{ secrets.ASC_KEY_ID }}
           ISSUER: ${{ secrets.ASC_ISSUER_ID }}
         run: |
           set -o pipefail
