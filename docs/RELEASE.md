@@ -29,19 +29,15 @@
 - [x] 版本 1.0：四語宣傳文字、描述、關鍵字、支援／行銷網址、版權「2026 Empty Office」、手動發布、四語各 6 張截圖
 - 注意：ASC 新增多個語言時要一次存一個，否則會誤報「名稱已被使用」
 
-## 要老闆在 Apple 網站操作
-- [ ] App Store Connect → 使用者與存取權限 → 整合 → App Store Connect API → 產生金鑰（角色「App 管理」），記下 Issuer ID、Key ID，下載 .p8
-- [ ] GitHub repo 3D_Tree → Settings → Secrets and variables → Actions：`APPLE_TEAM_ID`、`ASC_KEY_ID`、`ASC_ISSUER_ID`、`ASC_KEY_P8`（.p8 全文）
-- [ ] App Store Connect →「我的 App」→ 新增 App：iOS、名稱「靜心時光：呼吸冥想」、主要語言繁體中文、Bundle ID `com.austin410203.seasontree`、SKU `seasontree`
-- [ ] 協議、稅務和銀行業務：付費 App 協議、W-8BEN、銀行帳戶；申請 Small Business Program（抽成 15%）
-- [ ] App 內購買項目：非消耗型 `com.austin410203.seasontree.full`、NT$30、四語系名稱與描述（見 metadata）、審查截圖用 `store/screenshots/iphone-6.9/zh/4-sleep.png` 以外的一張完整版頁畫面
-- [ ] App 隱私（因為有 AdMob 獎勵廣告，依 Google 的「AdMob 的 App Store 資料揭露」說明填寫，送審前再到 Google 官方頁確認一次）：
-  - 收集的資料：裝置 ID、產品互動、廣告資料、當機資料、效能資料、其他診斷資料、大略位置
-  - 用途：第三方廣告、分析
-  - 「用來追蹤你」：勾選裝置 ID 與廣告資料（使用者在 ATT 允許追蹤時會用於個人化廣告）
-  - 我們自己（練習紀錄、設定）不收集任何資料
-- [ ] 年齡分級問卷：內容全部選「無」；「廣告」照實勾選有（只有獎勵廣告，內容分級上限 G）→ 預期 4+
-- [ ] 類別：健康與健身（主）、生活風格（副）
+## 送審前設定（2026-10-27 完成）
+- [x] 付費 App 協議 Active（2026-10-26 ~ 2027-10-26）
+- [x] 內容權利：含第三方內容（AdMob 廣告）且有權利；受監管醫療器材：否
+- [x] 年齡分級問卷：廣告＝有、健康或保健主題＝有，其他全部無 → 多數國家 9+（越南 12+、巴西 AL、韓國 ALL）
+- [x] App 隱私已發布：隱私權網址（四語）https://calm.emptyoffice.app/privacy.html；收集 7 種（大略位置、裝置 ID、產品互動、廣告資料、當機、效能、其他診斷），用途第三方廣告＋分析（診斷類只有分析），都「不連結到身分」；裝置 ID 與廣告資料「用來追蹤」
+- [x] App 審查資訊：不需登入、聯絡人 Yno Huang／+886 2 8785 3793／hello@emptyoffice.app、備註＝store/review-notes.md
+- [x] GitHub Secrets：`APPLE_TEAM_ID`、`ASC_KEY_ID`（7F3SR5UVSM，團隊金鑰「Tidebuilt」，App 管理）、`ASC_ISSUER_ID`
+- [ ] 老闆：`ASC_KEY_P8`＝Downloads/AuthKey_7F3SR5UVSM.p8 全文（私鑰，Claude 不代貼）
+- [ ] 選擇性：內購家人共享（開了不能關）、DSA 交易者身分（目前非交易者）
 
 ## 廣告（AdMob，見 MONETIZATION.md）
 - [ ] 老闆：AdMob 建立 iOS／Android 應用程式與獎勵廣告單元，交給 Claude App ID、廣告單元 ID、app-ads.txt 那一行
