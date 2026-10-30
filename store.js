@@ -23,7 +23,10 @@ const RECHECK = 7 * 86400e3;
 const read = () => { try { return JSON.parse(localStorage.getItem(KEY) || 'null'); } catch { return null; } };
 const write = (v) => { try { v ? localStorage.setItem(KEY, JSON.stringify(v)) : localStorage.removeItem(KEY); } catch { /* storage blocked */ } };
 
-export const paywallOn = true;
+// 2026-10-30: the web version is free (every scene); listeners can chip in through DONATE instead.
+// The apps keep the Full Version and never show the donate link (App Review 3.1.1).
+export const paywallOn = isNative;
+export const DONATE = 'https://emptyofficex.lemonsqueezy.com/checkout/buy/6f5e4472-6317-44ac-b8f4-f35ac635d2d7?checkout%5Bcustom%5D%5Bgame%5D=calm';
 
 // ---- iOS: App Store in-app purchase
 export const usesAppStore = platform === 'ios';

@@ -2,7 +2,7 @@ import './lock.js'; // domain lock first, before anything else runs
 import { world, SCENES } from './core.js';
 import { SoundEngine, TRACKS, PRESETS } from './audio.js';
 import { native } from './native.js';
-import { PASS, FREE_SCENES, paywallOn, isSceneLocked, passInfo, activate, recheck, usesAppStore, iapPrice, iapBuy, iapRestore, trialUntil, startTrial } from './store.js';
+import { PASS, DONATE, FREE_SCENES, paywallOn, isSceneLocked, passInfo, activate, recheck, usesAppStore, iapPrice, iapBuy, iapRestore, trialUntil, startTrial } from './store.js';
 import { showRewarded, adsLeftToday, showAdPrivacy } from './ads.js';
 import { t, setLang, detectLang, LANGS, applyStatic, getLang } from './i18n.js';
 import { createSaves } from './save.js';
@@ -675,6 +675,15 @@ $('fullBody').addEventListener('click', async e => {
 });
 $('fullBody').addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.id === 'fullKey') $('fullGo').click(); });
 if (paywallOn) recheck();
+else {
+  // free web version: the 完整版 entry and its price page give way to a donate link
+  document.querySelector('.full-entry [data-sheet="full"]').parentElement.hidden = true;
+  document.querySelectorAll('.legal-links [href="pass.html"]').forEach(a => a.remove());
+  $('donateLink').href = DONATE; $('donateEntry').hidden = false;
+  const intro = document.querySelector('.intro-legal'), d = document.createElement('a');
+  d.href = DONATE; d.target = '_blank'; d.rel = 'noopener'; d.dataset.i18n = 'donate.btn'; d.textContent = t('donate.btn');
+  intro.prepend(d);
+}
 // Google's ad privacy choices (consent form), app only
 if (native.isNative) {
   $('adPrivacy').hidden = false;
