@@ -680,9 +680,7 @@ else {
   document.querySelector('.full-entry [data-sheet="full"]').parentElement.hidden = true;
   document.querySelectorAll('.legal-links [href="pass.html"]').forEach(a => a.remove());
   $('donateLink').href = DONATE; $('donateEntry').hidden = false;
-  const intro = document.querySelector('.intro-legal'), d = document.createElement('a');
-  d.href = DONATE; d.target = '_blank'; d.rel = 'noopener'; d.dataset.i18n = 'donate.btn'; d.textContent = t('donate.btn');
-  intro.prepend(d);
+  $('introDonate').href = DONATE; $('introDonate').hidden = false;
 }
 // Google's ad privacy choices (consent form), app only
 if (native.isNative) {
