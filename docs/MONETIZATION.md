@@ -3,11 +3,11 @@
 ## 內購項目
 | 管道 | ID | 類型 | 內容 | 價格 |
 |---|---|---|---|---|
-| 網頁版 Lemon Squeezy | Store `507523`、Product `1474549`（測試模式） | 一次買斷、序號 5 台裝置、永久有效 | 「靜心時光 完整版 Calm Moments Full Version」 | NT$30 |
+| 網頁版 Lemon Squeezy | Store `507523`、Product `1485754`（測試模式） | 一次買斷、序號 5 台裝置、永久有效 | 「靜心時光 完整版 Calm Moments Full Version」 | NT$30 |
 | App Store（iOS） | `com.austin410203.seasontree.full`（要在 App Store Connect 建立） | 非消耗型，StoreKit 2（ios/App/App/NativePlugins.swift） | 同上 | NT$30 |
 | Google Play（Android） | 尚未建立 | 非消耗型 | 同上 | 約 NT$30 |
 
-- 結帳連結（測試模式）：https://emptyofficex.lemonsqueezy.com/checkout/buy/c8ce6018-0b8b-469e-9c32-5215b1b7d7b5
+- 結帳連結（測試模式）：https://emptyofficex.lemonsqueezy.com/checkout/buy/6863cdcc-24a1-4e5a-b922-380909e08c90
 - 商品頁設定：稅務類別 Software；產生序號（無期限、上限 5 台）；確認視窗與收據 email 寫好中英文啟用步驟，按鈕連到 https://calm.emptyoffice.app/
 - 商品圖：`art/store/`（四季之樹、極光、燈塔，1600×1200）
 

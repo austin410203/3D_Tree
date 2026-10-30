@@ -7,8 +7,8 @@ import { isNative, platform } from './native.js';
 
 // Lemon Squeezy checkout. While the store is in test mode the button only works with ?lstest in the address,
 // so ordinary visitors can't unlock with a test card; set LIVE = true when the store goes live.
-const LIVE = false;
-const CHECKOUT = 'https://emptyofficex.lemonsqueezy.com/checkout/buy/c8ce6018-0b8b-469e-9c32-5215b1b7d7b5';
+const LIVE = true;
+const CHECKOUT = 'https://emptyofficex.lemonsqueezy.com/checkout/buy/6863cdcc-24a1-4e5a-b922-380909e08c90';
 const testing = (() => { try { return new URLSearchParams(location.search).has('lstest'); } catch { return false; } })();
 export const PASS = {
   checkoutUrl: LIVE || testing || platform === 'android' ? CHECKOUT : '', // empty: the buy button says 「即將開放」
