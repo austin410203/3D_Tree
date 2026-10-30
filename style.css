@@ -269,3 +269,7 @@ input[type=checkbox] { width: 20px; height: 20px; accent-color: var(--accent); }
 .house-go { margin-top: 4px; padding: 11px 24px; border-radius: 999px; font-weight: 700; color: #fff; background: linear-gradient(135deg, #f0a6c4, #b7a3e8); }
 .house-go:disabled { background: #d9d3e2; }
 .house-x { position: absolute; top: 8px; right: 10px; width: 30px; height: 30px; border-radius: 50%; color: #8a8094; background: transparent; font-size: 15px; }
+
+/* 存檔（save.js／saveui.js）：完成畫面的「已自動存檔」、紀錄頁的存檔按鈕 */
+.doneSaved { font-size: 12px; opacity: .6; margin: 4px 0 0; }
+#sheet-stats .saveBtn { margin: 12px auto 0; display: block; }

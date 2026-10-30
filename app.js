@@ -5,6 +5,8 @@ import { native } from './native.js';
 import { PASS, FREE_SCENES, paywallOn, isSceneLocked, passInfo, activate, recheck, usesAppStore, iapPrice, iapBuy, iapRestore, trialUntil, startTrial } from './store.js';
 import { showRewarded, adsLeftToday, showAdPrivacy } from './ads.js';
 import { t, setLang, detectLang, LANGS, applyStatic, getLang } from './i18n.js';
+import { createSaves } from './save.js';
+import { createSaveUI } from './saveui.js';
 
 // ---------------------------------------------------------------- data
 const PATTERNS = [
@@ -16,9 +18,12 @@ const PATTERNS = [
 ];
 const PREP = 5; // seconds of "準備" before the first breath
 
+// 存檔欄位（Company/playbooks/save-system.md）：練習紀錄 `seasontree.stats` 跟著 3 個欄位走（eosv_st_s{N}_seasontree.stats，
+// 例如家人各用一個），設定 `seasontree.settings` 全欄位共用。舊紀錄第一次載入時搬進存檔 1。遊玩紀錄：每次練習（30 秒以上）一筆。
+const saves = createSaves({ game: 'CalmMoments', prefix: 'eosv_st_', slotKeys: ['seasontree.stats'], raw: true });
 const store = {
-  get(k, d) { try { return { ...d, ...JSON.parse(localStorage.getItem(k) || '{}') }; } catch { return { ...d }; } },
-  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* private mode */ } },
+  get(k, d) { try { return { ...d, ...JSON.parse(saves.ls.getItem(k) || '{}') }; } catch { return { ...d }; } },
+  set(k, v) { try { saves.ls.setItem(k, JSON.stringify(v)); } catch { /* private mode */ } },
 };
 const settings = store.get('seasontree.settings', {
   minutes: 5, sleepMinutes: 30, sleepPreset: 'scene', pattern: 'natural', cue: true, bowl: true, haptic: false,
@@ -273,6 +278,8 @@ function finishSession(completed) {
     stats.days[k] = (stats.days[k] || 0) + secs;
     stats.sessions++;
     store.set('seasontree.stats', stats);
+    saves.log({ s: secs, c: !!completed, sc: settings.scene });   // 遊玩紀錄（存檔畫面）
+    $('doneSaved').textContent = saveUI.savedText();
   }
   if (secs >= 30) {
     const mins = Math.max(1, Math.round(secs / 60));
@@ -705,3 +712,22 @@ if ('serviceWorker' in navigator && location.protocol === 'https:' && !native.is
 }
 
 window.__app = { step, settings, stats, engine, sess, sleep, startSleep, endSleep, startSession, finishSession, applyScene, openSheet, pickScene };
+
+// ---------------------------------------------------------------- save slots（saveui.js）：紀錄頁「💾 存檔 N」
+const SVT = {
+  zh: { sum: '練習 {n} 次・累計 {m} 分鐘', full: '完整完成', part: '中途結束', min: '{m} 分鐘' },
+  en: { sum: '{n} sessions · {m} min total', full: 'Completed', part: 'Ended early', min: '{m} min' },
+  ja: { sum: '{n} 回・合計 {m} 分', full: '最後まで', part: '途中で終了', min: '{m} 分' },
+  ko: { sum: '{n}회 · 누적 {m}분', full: '끝까지 완료', part: '중간에 종료', min: '{m}분' },
+};
+const svt = (k, o = {}) => (SVT[getLang()] || SVT.en)[k].replace(/\{(\w+)\}/g, (_, x) => o[x] ?? '');
+const saveUI = createSaveUI(saves, {
+  name: { zh: '靜心時光', en: 'Calm Moments', ja: 'Calm Moments', ko: 'Calm Moments' }, file: 'CalmMoments', lang: () => getLang(),
+  summary: d => {
+    let st = {}; try { st = JSON.parse(d['seasontree.stats'] || '{}') || {}; } catch { /* */ }
+    const mins = Math.round(Object.values(st.days || {}).reduce((a, b) => a + b, 0) / 60);
+    return svt('sum', { n: st.sessions || 0, m: mins });
+  },
+  logRow: e => ({ title: svt('min', { m: Math.max(1, Math.round(e.s / 60)) }), result: svt(e.c ? 'full' : 'part'), ok: !!e.c }),
+});
+$('statsWeek').after(saveUI.button('saveBtn'));

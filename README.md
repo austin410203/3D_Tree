@@ -7,6 +7,9 @@ A three.js four-season tree for breathing and relaxation: breathing guide, medit
 
 The web version's first release (v1) is kept as the `v1.0-web` tag / `web-v1` branch.
 
+## Save slots (2026-10-30, `Company/playbooks/save-system.md`)
+`save.js` / `saveui.js` (shared): 3 slots for the practice record `seasontree.stats` (stored as `eosv_st_s{N}_seasontree.stats`; the old key moves into save 1 on first load) — e.g. one per family member. Settings stay shared. The Records sheet has "💾 Save N" (switch, export .json, import, two-tap delete, play log = one row per session of 30 s or more); the done card shows "Saved automatically". Both files are in `sw.js` CORE (cache v16) and `scripts/build-www.mjs` FILES. Tests: `node tools/save_test.mjs`; after `node scripts/build-site.mjs`: `python ../Company/playbooks/templates/save_system/save_e2e.py site shots/saves tools/save_legacy.json --play "…__app.startSession(); __app.sess.t = 125; __app.finishSession(true)…"`.
+
 ## Files
 
 | File | Contents |

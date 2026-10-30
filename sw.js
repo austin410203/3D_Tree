@@ -1,6 +1,6 @@
 // Offline support for the web/PWA build: app files are network-first so updates land.
-const CACHE = 'seasontree-v15';
-const CORE = ['./', 'index.html', 'style.css', 'app.js', 'lock.js', 'core.js', 'tree.js', 'audio.js', 'native.js', 'i18n.js', 'manifest.webmanifest',
+const CACHE = 'seasontree-v16';
+const CORE = ['./', 'index.html', 'style.css', 'app.js', 'lock.js', 'core.js', 'tree.js', 'audio.js', 'native.js', 'i18n.js', 'save.js', 'saveui.js', 'manifest.webmanifest',
   'scenes/common.js', 'scenes/sea.js', 'scenes/lotus.js', 'scenes/candle.js', 'scenes/aurora.js',
   'scenes/rain.js', 'scenes/snow.js', 'scenes/camp.js', 'scenes/whale.js', 'scenes/overlook.js', 'scenes/lighthouse.js', 'scenes/mountain.js', 'scenes/deer.js',
   'vendor/three/three.module.js', 'vendor/three/addons/controls/OrbitControls.js',
