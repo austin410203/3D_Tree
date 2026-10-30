@@ -3,8 +3,10 @@
   "name": "calm-moments",
   "main": "worker/index.js",
   "compatibility_date": "2026-10-19",
+  // site/ = minified copy built by scripts/build-site.mjs (Cloudflare runs it on deploy)
+  "build": { "command": "node scripts/build-site.mjs" },
   "assets": {
-    "directory": ".",
+    "directory": "./site",
     "binding": "ASSETS",
     "run_worker_first": ["/api/*"]
   },

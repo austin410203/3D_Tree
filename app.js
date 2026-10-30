@@ -1,3 +1,4 @@
+import './lock.js'; // domain lock first, before anything else runs
 import { world, SCENES } from './core.js';
 import { SoundEngine, TRACKS, PRESETS } from './audio.js';
 import { native } from './native.js';
